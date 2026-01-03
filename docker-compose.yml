@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Banco de Dados PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: feedback-db
+    environment:
+      POSTGRES_USER: user_feedback
+      POSTGRES_PASSWORD: password_feedback
+      POSTGRES_DB: feedback_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # LocalStack (Simula AWS SQS, SNS, S3, Lambda)
+  localstack:
+    image: localstack/localstack
+    container_name: feedback-aws
+    ports:
+      - "4566:4566"            # Gateway principal da API AWS Local
+      - "4510-4559:4510-4559"  # Portas de serviços externos
+    environment:
+      - SERVICES=sqs,sns,s3
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - "./localstack_data:/tmp/localstack/data"
+
+volumes:
+  postgres_data:
