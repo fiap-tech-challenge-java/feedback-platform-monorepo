@@ -14,20 +14,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # LocalStack (Simula AWS SQS, SNS, S3, Lambda)
+  # LocalStack (Simula AWS)
   localstack:
     image: localstack/localstack
     container_name: feedback-aws
     ports:
-      - "4566:4566"            # Gateway principal da API AWS Local
-      - "4510-4559:4510-4559"  # Portas de serviços externos
+      - "4566:4566"            # Gateway
+      - "4510-4559:4510-4559"  # Portas de serviços
     environment:
-      - SERVICES=sqs,sns,s3
       - DEBUG=1
-      - DATA_DIR=/tmp/localstack/data
+      # IMPORTANTE: Definir região ajuda a evitar erros de client
       - AWS_DEFAULT_REGION=us-east-1
+      # IMPORTANTE: Não defina DATA_DIR aqui nas versões novas!
     volumes:
-      - "./localstack_data:/tmp/localstack/data"
+      # CORREÇÃO 1: Caminho correto para persistência nas versões novas
+      - "./localstack_data:/var/lib/localstack"
+      # CORREÇÃO 2: Necessário para o LocalStack falar com o Docker
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      # Script de inicialização (se você criou a pasta scripts)
+      - "./scripts/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
 
 volumes:
   postgres_data:

@@ -6,6 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="feedback-reporting" />
+        <module name="feedback-ingestion" />
+        <module name="feedback-analysis" />
+        <module name="feedback-core" />
+        <module name="feedback-notification" />
       </profile>
     </annotationProcessing>
   </component>
