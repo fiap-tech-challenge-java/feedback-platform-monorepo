@@ -17,3 +17,6 @@ spring:
 aws:
   sqs:
     queue-name: feedback-analysis-queue
+  sns:
+    topic:
+      arn: arn:aws:sns:us-east-1:000000000000:feedback-notification-topic
