@@ -1,11 +1,9 @@
 spring:
   application:
     name: feedback-analysis
-  datasource:
-    url: jdbc:postgresql://localhost:5432/feedback_db
-    username: user_feedback
-    password: password_feedback
   cloud:
+    function:
+      definition: analyzeFeedback
     aws:
       region:
         static: us-east-1
