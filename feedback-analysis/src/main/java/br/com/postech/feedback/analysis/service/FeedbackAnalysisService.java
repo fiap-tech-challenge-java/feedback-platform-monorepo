@@ -1,6 +1,5 @@
 package br.com.postech.feedback.analysis.service;
 
-import br.com.postech.feedback.core.config.AwsConfigConstants;
 import br.com.postech.feedback.core.domain.Feedback;
 import br.com.postech.feedback.core.domain.StatusFeedback;
 import br.com.postech.feedback.core.dto.FeedbackEventDTO;
@@ -24,6 +23,7 @@ public class FeedbackAnalysisService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
+    // Injeta o valor do application.yaml. Se não existir, entra como vazio/null
     @Value("${aws.sns.topic.arn:}")
     private String topicArn;
 
@@ -61,22 +61,24 @@ public class FeedbackAnalysisService {
     }
 
     private void sendToSns(FeedbackEventDTO event) {
+
+        // SEGURANÇA: Validação explícita antes de tentar enviar
+        if (topicArn == null || topicArn.isBlank()) {
+            throw new IllegalStateException("ERRO DE CONFIGURAÇÃO: O ARN do tópico SNS não foi definido. " +
+                    "Verifique se a variável 'aws.sns.topic.arn' está configurada corretamente no ambiente.");
+        }
+
         try {
             String messageBody = objectMapper.writeValueAsString(event);
 
-            // Fallback para o nome do tópico definido no Core se o ARN não vier do ambiente
-            String targetArn = (topicArn != null && !topicArn.isBlank())
-                    ? topicArn
-                    : "arn:aws:sns:us-east-1:000000000000:" + AwsConfigConstants.TOPIC_NOTIFICATION;
-
             PublishRequest request = PublishRequest.builder()
-                    .topicArn(targetArn)
+                    .topicArn(topicArn) // Usa estritamente o que foi configurado
                     .subject("ALERTA: Novo Feedback Crítico Recebido")
                     .message(messageBody)
                     .build();
 
             snsClient.publish(request);
-            log.info("Notificação enviada com sucesso para o tópico: {}", AwsConfigConstants.TOPIC_NOTIFICATION);
+            log.info("Notificação enviada com sucesso para o ARN: {}", topicArn);
 
         } catch (JsonProcessingException e) {
             log.error("Erro ao serializar JSON", e);
