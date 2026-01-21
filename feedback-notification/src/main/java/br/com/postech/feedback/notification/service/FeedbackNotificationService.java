@@ -2,8 +2,11 @@ package br.com.postech.feedback.notification.service;
 
 import br.com.postech.feedback.core.dto.FeedbackEventDTO;
 import br.com.postech.feedback.notification.dto.NotificationEmailDTO;
+import br.com.postech.feedback.notification.dto.NotificationResponseDTO;
+import br.com.postech.feedback.notification.metrics.NotificationMetrics;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +19,7 @@ import software.amazon.awssdk.services.ses.model.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Serviço responsável por processar notificações SNS e enviar e-mails via SES
@@ -30,6 +33,8 @@ public class FeedbackNotificationService {
     private final SesClient sesClient;
     private final ObjectMapper objectMapper;
     private final TemplateEngine templateEngine;
+    private final NotificationMetrics metrics;
+    private final Validator validator;
 
     @Value("${aws.ses.sender-email}")
     private String senderEmail;
@@ -43,9 +48,10 @@ public class FeedbackNotificationService {
     /**
      * Bean que define a função serverless para consumir mensagens do SNS
      * Esta função é acionada automaticamente quando uma mensagem chega ao tópico SNS
+     * Retorna uma resposta HTTP com status e detalhes do processamento
      */
     @Bean
-    public Consumer<String> processNotification() {
+    public Function<String, NotificationResponseDTO> processNotification() {
         return snsMessage -> {
             log.info("Recebendo mensagem para processamento de notificação");
             log.debug("Payload recebido: {}", snsMessage);
@@ -53,17 +59,31 @@ public class FeedbackNotificationService {
             // Validação básica: ignorar payloads vazios ou não-JSON
             if (snsMessage == null || snsMessage.trim().isEmpty()) {
                 log.warn("Payload vazio recebido. Ignorando...");
-                return;
+                return NotificationResponseDTO.rejected("Payload vazio ou nulo");
             }
 
             // Ignorar requisições GET ou payloads que claramente não são JSON
             if (!snsMessage.trim().startsWith("{") && !snsMessage.trim().startsWith("[")) {
                 log.warn("Payload não-JSON recebido: '{}'. Ignorando...", snsMessage);
-                return;
+                return NotificationResponseDTO.rejected("Payload não é JSON válido");
             }
 
             try {
                 FeedbackEventDTO feedbackEvent = extractFeedbackEvent(snsMessage);
+
+                // Validar o FeedbackEventDTO
+                var violations = validator.validate(feedbackEvent);
+                if (!violations.isEmpty()) {
+                    String errorMsg = violations.stream()
+                            .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                            .reduce((a, b) -> a + "; " + b)
+                            .orElse("Erro de validação");
+                    log.error("Validação do FeedbackEventDTO falhou: {}", errorMsg);
+                    metrics.incrementMessagesRejected();
+                    return NotificationResponseDTO.error("Validação falhou: " + errorMsg);
+                }
+
+                metrics.incrementMessagesReceived();
 
                 log.info("Processando notificação para Feedback ID: {} com status: {}",
                         feedbackEvent.id(), feedbackEvent.status());
@@ -78,11 +98,24 @@ public class FeedbackNotificationService {
                 );
 
                 // Envia e-mail
-                sendEmail(emailData);
+                boolean emailSent = sendEmail(emailData);
+
+                metrics.incrementMessagesProcessed();
+
+                String priority = feedbackEvent.status() != null ? feedbackEvent.status().name() : "UNKNOWN";
+
+                log.info("Notificação processada com sucesso - ID: {}, Prioridade: {}, Email enviado: {}",
+                        feedbackEvent.id(), priority, emailSent);
+
+                return NotificationResponseDTO.success(
+                        feedbackEvent.id(),
+                        priority,
+                        emailSent
+                );
 
             } catch (Exception e) {
                 log.error("Erro ao processar notificação. Payload: {}", snsMessage, e);
-                throw new RuntimeException("Falha ao processar notificação", e);
+                return NotificationResponseDTO.error(e.getMessage());
             }
         };
     }
@@ -117,11 +150,12 @@ public class FeedbackNotificationService {
 
     /**
      * Envia e-mail usando AWS SES com template HTML
+     * @return true se o email foi enviado, false se SES está desabilitado
      */
-    private void sendEmail(NotificationEmailDTO emailData) {
+    private boolean sendEmail(NotificationEmailDTO emailData) {
         if (!sesEnabled) {
             log.warn("SES está desabilitado. E-mail não será enviado. Dados: {}", emailData);
-            return;
+            return false;
         }
 
         try {
@@ -151,13 +185,19 @@ public class FeedbackNotificationService {
             log.info("E-mail enviado com sucesso! MessageId: {} | Feedback ID: {} | Para: {}",
                     response.messageId(), emailData.feedbackId(), recipientEmail);
 
+            metrics.incrementEmailsSent();
+            return true;
+
         } catch (SesException e) {
-            log.error("Erro ao enviar e-mail via SES. Código: {} | Mensagem: {}",
-                    e.awsErrorDetails().errorCode(), e.awsErrorDetails().errorMessage(), e);
-            throw new RuntimeException("Falha ao enviar e-mail", e);
+            metrics.incrementEmailsFailed();
+            String errorCode = e.awsErrorDetails() != null ? e.awsErrorDetails().errorCode() : "UNKNOWN";
+            String errorMessage = e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : e.getMessage();
+            log.error("Erro ao enviar e-mail via SES. Código: {} | Mensagem: {}", errorCode, errorMessage, e);
+            throw new RuntimeException("Falha ao enviar e-mail: " + e.getMessage(), e);
         } catch (Exception e) {
+            metrics.incrementEmailsFailed();
             log.error("Erro inesperado ao enviar e-mail", e);
-            throw new RuntimeException("Falha ao enviar e-mail", e);
+            throw new RuntimeException("Falha ao enviar e-mail: " + e.getMessage(), e);
         }
     }
 

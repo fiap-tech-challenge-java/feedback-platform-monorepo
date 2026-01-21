@@ -2,7 +2,13 @@ package br.com.postech.feedback.notification.service;
 
 import br.com.postech.feedback.core.domain.StatusFeedback;
 import br.com.postech.feedback.core.dto.FeedbackEventDTO;
+import br.com.postech.feedback.notification.dto.NotificationResponseDTO;
+import br.com.postech.feedback.notification.metrics.NotificationMetrics;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +23,7 @@ import software.amazon.awssdk.services.ses.model.SendEmailRequest;
 import software.amazon.awssdk.services.ses.model.SendEmailResponse;
 
 import java.time.LocalDateTime;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,6 +40,8 @@ class FeedbackNotificationServiceTest {
     private TemplateEngine templateEngine;
 
     private ObjectMapper objectMapper;
+    private NotificationMetrics metrics;
+    private Validator validator;
     private FeedbackNotificationService service;
 
     @BeforeEach
@@ -41,7 +49,15 @@ class FeedbackNotificationServiceTest {
         objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules();
 
-        service = new FeedbackNotificationService(sesClient, objectMapper, templateEngine);
+        // Criar MeterRegistry e metrics
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
+        metrics = new NotificationMetrics(meterRegistry);
+        metrics.init();
+
+        // Criar validator
+        validator = Validation.buildDefaultValidatorFactory().getValidator();
+
+        service = new FeedbackNotificationService(sesClient, objectMapper, templateEngine, metrics, validator);
 
         // Configurar propriedades
         ReflectionTestUtils.setField(service, "senderEmail", "noreply@test.com");
@@ -54,7 +70,7 @@ class FeedbackNotificationServiceTest {
         // Arrange
         FeedbackEventDTO feedbackEvent = new FeedbackEventDTO(
                 1L,
-                "Produto com defeito",
+                "Produto com defeito grave que precisa de reparo urgente",
                 3,
                 StatusFeedback.CRITICAL,
                 LocalDateTime.now()
@@ -73,10 +89,14 @@ class FeedbackNotificationServiceTest {
                         .build());
 
         // Act
-        Consumer<String> function = service.processNotification();
-        function.accept(snsMessage);
+        Function<String, NotificationResponseDTO> function = service.processNotification();
+        NotificationResponseDTO response = function.apply(snsMessage);
 
         // Assert
+        assertNotNull(response);
+        assertEquals("SUCCESS", response.getStatus());
+        assertEquals(1L, response.getFeedbackId());
+        assertTrue(response.getEmailSent());
         verify(sesClient, times(1)).sendEmail(any(SendEmailRequest.class));
         verify(templateEngine, times(1)).process(eq("critical-feedback-email"), any(Context.class));
     }
@@ -88,7 +108,7 @@ class FeedbackNotificationServiceTest {
 
         FeedbackEventDTO feedbackEvent = new FeedbackEventDTO(
                 1L,
-                "Produto com defeito",
+                "Produto com defeito grave que precisa de atenção urgente",
                 3,
                 StatusFeedback.CRITICAL,
                 LocalDateTime.now()
@@ -99,21 +119,29 @@ class FeedbackNotificationServiceTest {
                 messageBody.replace("\"", "\\\""));
 
         // Act
-        Consumer<String> function = service.processNotification();
-        function.accept(snsMessage);
+        Function<String, NotificationResponseDTO> function = service.processNotification();
+        NotificationResponseDTO response = function.apply(snsMessage);
 
         // Assert
+        assertNotNull(response);
+        assertEquals("SUCCESS", response.getStatus());
+        assertFalse(response.getEmailSent());
         verify(sesClient, never()).sendEmail(any(SendEmailRequest.class));
     }
 
     @Test
-    void testProcessNotification_WithInvalidMessage_ShouldThrowException() {
+    void testProcessNotification_WithInvalidMessage_ShouldReturnError() {
         // Arrange
         String invalidSnsMessage = "{\"Message\": \"invalid json}";
 
-        // Act & Assert
-        Consumer<String> function = service.processNotification();
-        assertThrows(RuntimeException.class, () -> function.accept(invalidSnsMessage));
+        // Act
+        Function<String, NotificationResponseDTO> function = service.processNotification();
+        NotificationResponseDTO response = function.apply(invalidSnsMessage);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals("ERROR", response.getStatus());
+        assertNotNull(response.getError());
     }
 
     @Test
@@ -121,7 +149,7 @@ class FeedbackNotificationServiceTest {
         // Arrange
         FeedbackEventDTO feedbackEvent = new FeedbackEventDTO(
                 1L,
-                "Produto com defeito",
+                "Produto com defeito muito grave que requer atenção imediata",
                 3,
                 StatusFeedback.CRITICAL,
                 LocalDateTime.now()
@@ -142,10 +170,12 @@ class FeedbackNotificationServiceTest {
         ArgumentCaptor<SendEmailRequest> requestCaptor = ArgumentCaptor.forClass(SendEmailRequest.class);
 
         // Act
-        Consumer<String> function = service.processNotification();
-        function.accept(snsMessage);
+        Function<String, NotificationResponseDTO> function = service.processNotification();
+        NotificationResponseDTO response = function.apply(snsMessage);
 
         // Assert
+        assertNotNull(response);
+        assertEquals("SUCCESS", response.getStatus());
         verify(sesClient).sendEmail(requestCaptor.capture());
         SendEmailRequest capturedRequest = requestCaptor.getValue();
 
