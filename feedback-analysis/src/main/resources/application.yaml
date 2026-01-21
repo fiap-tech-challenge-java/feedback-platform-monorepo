@@ -2,15 +2,21 @@ spring:
   application:
     name: feedback-analysis
   cloud:
-    function:
-      definition: analyzeFeedback
     aws:
       region:
         static: us-east-1
       credentials:
         access-key: test
         secret-key: test
-      endpoint: http://localhost:4566 # Aponta para o LocalStack
+      endpoint: http://localhost:4566 # LocalStack
+
+# Listener para rodar no local
+cloud:
+  aws:
+    sqs:
+      listener:
+        auto-startup: true
+        wait-time-out: 5s # Polling rápido para teste
 
 aws:
   sqs:
