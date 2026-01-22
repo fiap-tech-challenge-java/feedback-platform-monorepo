@@ -81,7 +81,7 @@ public class ReportGeneratorService {
         StringBuilder csv = new StringBuilder();
         csv.append("metric,value\n");
         csv.append("totalFeedbacks,").append(metrics.getTotalFeedbacks()).append("\n");
-        csv.append("averageScore,").append(String.format("%.1f", metrics.getAverageScore())).append("\n");
+        csv.append("averageScore,").append(String.format(java.util.Locale.US, "%.1f", metrics.getAverageScore())).append("\n");
 
         if (metrics.getFeedbacksByUrgency() != null) {
             metrics.getFeedbacksByUrgency().forEach((urgency, count) ->
