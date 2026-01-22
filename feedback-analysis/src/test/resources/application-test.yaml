@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: feedback-analysis
+  cloud:
+    aws:
+      region:
+        static: us-east-1
+      credentials:
+        access-key: test
+        secret-key: test
+      endpoint: http://localhost:4566
+
+# Desabilita o listener SQS durante os testes unitários
+cloud:
+  aws:
+    sqs:
+      listener:
+        auto-startup: false
+
+aws:
+  sqs:
+    queue-name: feedback-analysis-queue
+  sns:
+    topic:
+      arn: arn:aws:sns:us-east-1:000000000000:feedback-notification-topic
