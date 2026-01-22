@@ -33,17 +33,11 @@ public class Feedback {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Campos opcionais (mas boas práticas para futuro)
-    private String userId;
-    private String productId;
-
     // Construtor Customizado para criar novos Feedbacks
     // Aqui aplicamos a Regra de Negócio: Nota < 5 é Crítico
-    public Feedback(String description, Integer rating, String userId, String productId) {
+    public Feedback(String description, Integer rating) {
         this.description = description;
         this.rating = rating;
-        this.userId = userId;
-        this.productId = productId;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
 

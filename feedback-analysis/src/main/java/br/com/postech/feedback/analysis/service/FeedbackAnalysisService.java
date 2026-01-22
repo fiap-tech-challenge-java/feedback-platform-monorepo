@@ -35,9 +35,7 @@ public class FeedbackAnalysisService {
             // 1. REUTILIZAÇÃO DO DOMÍNIO (CORE):
             Feedback feedbackDomain = new Feedback(
                     event.description(),
-                    event.rating(),
-                    null,
-                    null
+                    event.rating()
             );
 
             StatusFeedback statusCalculado = feedbackDomain.getStatus();

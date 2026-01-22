@@ -10,8 +10,6 @@ public record FeedbackResponse(
         Integer rating,
         StatusFeedback status,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt,
-        String userId,
-        String productId
+        LocalDateTime updatedAt
 ) {
 }

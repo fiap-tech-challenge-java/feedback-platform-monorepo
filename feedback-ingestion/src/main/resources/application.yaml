@@ -2,7 +2,7 @@ spring:
   application:
     name: feedback-ingestion
   datasource:
-    url: jdbc:postgresql://localhost:5432/feedback_db
+    url: jdbc:postgresql://localhost:5439/feedback_db
     username: user_feedback
     password: password_feedback
   cloud:
@@ -13,6 +13,9 @@ spring:
         access-key: test
         secret-key: test
       endpoint: http://localhost:4566 # Aponta para o LocalStack
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
 
 aws:
   sqs:
