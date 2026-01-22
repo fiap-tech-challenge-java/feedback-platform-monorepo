@@ -14,12 +14,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-# Configurações AWS - LocalStack
+server:
+  port: ${SERVER_PORT:8080}
+
+# AWS Configuration
 aws:
   region: ${AWS_REGION:us-east-1}
   endpoint: ${AWS_ENDPOINT:http://localhost:4566}
@@ -27,11 +30,10 @@ aws:
   secret-key: ${AWS_SECRET_ACCESS_KEY:test}
   s3:
     bucket-name: ${REPORT_BUCKET_NAME:postech-feedback-reports}
-    region: ${AWS_REGION:us-east-1}
   sns:
     topic-arn: ${SNS_TOPIC_ARN:arn:aws:sns:us-east-1:000000000000:feedback-notification-topic}
 
-# Configurações de Reporting
+# Report Configuration
 reporting:
   format: ${REPORT_FORMAT:json}
 
@@ -40,4 +42,3 @@ logging:
   level:
     root: INFO
     br.com.postech.feedback: DEBUG
-    software.amazon.awssdk: INFO

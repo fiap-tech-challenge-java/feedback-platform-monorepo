@@ -2,6 +2,9 @@ package br.com.postech.feedback.reporting.service;
 
 import br.com.postech.feedback.reporting.dto.FeedbackDetail;
 import br.com.postech.feedback.reporting.dto.ReportMetrics;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,10 +21,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ReportGeneratorServiceTest {
 
     private ReportGeneratorService reportGeneratorService;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        reportGeneratorService = new ReportGeneratorService();
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        reportGeneratorService = new ReportGeneratorService(objectMapper);
     }
 
     private ReportMetrics createTestMetrics() {
