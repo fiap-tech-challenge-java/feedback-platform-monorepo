@@ -27,7 +27,7 @@ public class FeedbackInjectionService {
 
         feedbackRepository.save(feedback);
 
-        try{
+        try {
             FeedbackEventDTO feedbackEventDTO = FeedbackMapper.toEvent(feedback);
             sqsTemplate.send(AwsConfigConstants.QUEUE_INGESTION_ANALYSIS, feedbackEventDTO);
 
