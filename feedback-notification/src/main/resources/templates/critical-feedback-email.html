@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerta de Feedback Crítico</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #dc3545;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .alert-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+        .value {
+            color: #333;
+        }
+        .critical-badge {
+            display: inline-block;
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .rating {
+            font-size: 24px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        .description-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>⚠️ ALERTA: Feedback Crítico Recebido</h1>
+        </div>
+
+        <div class="content">
+            <div class="alert-box">
+                <strong>Atenção!</strong> Um novo feedback crítico foi recebido e requer atenção imediata.
+            </div>
+
+            <div class="info-row">
+                <span class="label">ID do Feedback:</span>
+                <span class="value" th:text="${feedbackId}">12345</span>
+            </div>
+
+            <div class="info-row">
+                <span class="label">Urgência:</span>
+                <span class="value">
+                    <span class="critical-badge" th:text="${urgency}">CRITICAL</span>
+                </span>
+            </div>
+
+            <div class="info-row">
+                <span class="label">Nota:</span>
+                <span class="value rating" th:text="${rating} + ' / 10'">3 / 10</span>
+            </div>
+
+            <div class="info-row">
+                <span class="label">Data de Envio:</span>
+                <span class="value" th:text="${sentDate}">19/01/2026 14:30:00</span>
+            </div>
+
+            <div>
+                <span class="label">Descrição:</span>
+                <div class="description-box" th:text="${description}">
+                    Descrição do feedback crítico aqui...
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Este é um e-mail automático gerado pelo Sistema de Feedback.</p>
+            <p>Por favor, não responda a este e-mail.</p>
+            <p>&copy; 2026 Feedback Platform - POSTECH</p>
+        </div>
+    </div>
+</body>
+</html>

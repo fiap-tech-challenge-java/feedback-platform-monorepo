@@ -1,11 +1,9 @@
 spring:
   application:
     name: feedback-notification
-  datasource:
-    url: jdbc:postgresql://localhost:5432/feedback_db
-    username: user_feedback
-    password: password_feedback
   cloud:
+    function:
+      definition: processNotification
     aws:
       region:
         static: us-east-1
@@ -14,6 +12,17 @@ spring:
         secret-key: test
       endpoint: http://localhost:4566 # Aponta para o LocalStack
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
 aws:
-  sqs:
-    queue-name: feedback-analysis-queue
+  ses:
+    sender-email: noreply@feedbackplatform.com
+    recipient-email: admin@feedbackplatform.com
+    enabled: false  # Desabilitado para testes sem LocalStack
