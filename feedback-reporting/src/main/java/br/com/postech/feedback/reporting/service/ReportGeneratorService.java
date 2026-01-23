@@ -5,8 +5,7 @@ import br.com.postech.feedback.reporting.dto.ReportFeedbackItem;
 import br.com.postech.feedback.reporting.dto.ReportMetrics;
 import br.com.postech.feedback.reporting.dto.ReportSummary;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,38 +13,28 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ReportGeneratorService {
 
     private static final String REPORT_TYPE = "WEEKLY_REPORT";
     private static final String REPORT_PERIOD = "weekly";
 
-    @Value("${reporting.format:json}")
-    private String reportFormat;
-
     private final ObjectMapper objectMapper;
 
-    public ReportGeneratorService() {
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-        this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    }
+    @Value("${reporting.format:json}")
+    private String reportFormat;
 
     public String generateReport(ReportMetrics metrics, LocalDateTime generatedAt) {
         log.info("Generating report in {} format", reportFormat.toUpperCase());
 
         try {
-            String content;
             if ("csv".equalsIgnoreCase(reportFormat)) {
-                content = generateCsvReport(metrics);
-            } else {
-                content = generateJsonReport(metrics, generatedAt);
+                return generateCsvReport(metrics);
             }
-            return content;
+            return generateJsonReport(metrics, generatedAt);
         } catch (Exception e) {
             log.error("Failed to generate report: {}", e.getMessage());
             throw new RuntimeException("Failed to generate report", e);
@@ -59,7 +48,7 @@ public class ReportGeneratorService {
                         .urgency(detail.getUrgency())
                         .createdAt(detail.getCreatedAt())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         Report report = Report.builder()
                 .type(REPORT_TYPE)
