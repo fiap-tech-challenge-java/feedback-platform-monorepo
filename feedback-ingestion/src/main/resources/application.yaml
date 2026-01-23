@@ -5,15 +5,11 @@ spring:
     url: jdbc:postgresql://localhost:5432/feedback_db
     username: user_feedback
     password: password_feedback
-  cloud:
-    aws:
-      region:
-        static: us-east-1
-      credentials:
-        access-key: test
-        secret-key: test
-      endpoint: http://localhost:4566 # Aponta para o LocalStack
 
 aws:
+  region: us-east-1
+  endpoint: http://localhost:4566
+  access-key: test
+  secret-key: test
   sqs:
     queue-name: feedback-analysis-queue
