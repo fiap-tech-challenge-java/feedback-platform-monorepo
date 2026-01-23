@@ -2,7 +2,7 @@ package br.com.postech.feedback.reporting.service;
 
 import br.com.postech.feedback.reporting.dto.ReportReadyEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class SnsPublishService {
 
     private final SnsClient snsClient;
@@ -21,12 +22,6 @@ public class SnsPublishService {
 
     @Value("${aws.sns.topic-arn}")
     private String topicArn;
-
-    public SnsPublishService(SnsClient snsClient) {
-        this.snsClient = snsClient;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-    }
 
     public void publishReportReadyEvent(String reportUrl, LocalDateTime generatedAt) {
         log.info("Publishing ReportReady event to SNS - Topic: {}", topicArn);

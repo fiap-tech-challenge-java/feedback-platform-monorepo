@@ -8,15 +8,14 @@ spring:
       credentials:
         access-key: test
         secret-key: test
-      endpoint: http://localhost:4566 # LocalStack
+      endpoint: http://localhost:4566
 
-# Listener para rodar no local
+# Desabilita o listener SQS durante os testes unitários
 cloud:
   aws:
     sqs:
       listener:
-        auto-startup: true
-        wait-time-out: 5s # Polling rápido para teste
+        auto-startup: false
 
 aws:
   sqs:

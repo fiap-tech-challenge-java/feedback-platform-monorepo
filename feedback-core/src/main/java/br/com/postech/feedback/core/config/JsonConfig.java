@@ -18,6 +18,7 @@ public class JsonConfig {
         mapper.registerModule(new JavaTimeModule());
         // Escrever datas como Strings ISO-8601 e não timestamps numéricos
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.enable(SerializationFeature.INDENT_OUTPUT); // Adicionando formatação bonita do JSON
         return mapper;
     }
 

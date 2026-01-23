@@ -1,5 +1,6 @@
 package br.com.postech.feedback.reporting.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class S3UploadService {
 
     private final S3Client s3Client;
@@ -18,12 +20,8 @@ public class S3UploadService {
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
-    @Value("${aws.s3.region:us-east-1}")
+    @Value("${aws.region:us-east-1}")
     private String region;
-
-    public S3UploadService(S3Client s3Client) {
-        this.s3Client = s3Client;
-    }
 
     public String uploadReport(String content, String s3Key, String contentType) {
         log.info("Uploading report to S3 - Bucket: {}, Key: {}", bucketName, s3Key);

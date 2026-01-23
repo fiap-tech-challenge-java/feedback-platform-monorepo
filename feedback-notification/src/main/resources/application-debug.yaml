@@ -1,0 +1,5 @@
+logging:
+  level:
+    root: INFO
+    br.com.postech.feedback.notification: DEBUG
+    org.springframework.cloud.function: DEBUG
