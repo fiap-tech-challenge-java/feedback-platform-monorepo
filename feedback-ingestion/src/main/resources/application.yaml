@@ -2,9 +2,12 @@ spring:
   application:
     name: feedback-ingestion
   datasource:
-    url: jdbc:postgresql://localhost:5432/feedback_db
+    url: jdbc:postgresql://localhost:5439/feedback_db
     username: user_feedback
     password: password_feedback
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
 
 aws:
   region: us-east-1

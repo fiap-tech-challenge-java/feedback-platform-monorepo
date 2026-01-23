@@ -21,4 +21,5 @@ public class JsonConfig {
         mapper.enable(SerializationFeature.INDENT_OUTPUT); // Adicionando formatação bonita do JSON
         return mapper;
     }
+
 }
