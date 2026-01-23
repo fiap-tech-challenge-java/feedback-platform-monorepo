@@ -10,13 +10,10 @@ spring:
       region:
         static: us-east-1
       credentials:
-        access-key: test
-        secret-key: test
-      endpoint: http://localhost:4566 # Aponta para o LocalStack
+        accessKey: test
+        secretKey: test
+      sqs:
+        endpoint: http://localhost:4566
   jpa:
     hibernate:
       ddl-auto: create-drop
-
-aws:
-  sqs:
-    queue-name: feedback-analysis-queue
