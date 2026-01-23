@@ -7,6 +7,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import java.net.URI;
 
@@ -24,6 +25,20 @@ public class AwsConfig {
     @Bean
     public SnsClient snsClient() {
         var builder = SnsClient.builder()
+                .region(Region.of(region));
+
+        if (endpointUrl != null && !endpointUrl.isBlank()) {
+            builder.endpointOverride(URI.create(endpointUrl))
+                    .credentialsProvider(StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create("test", "test")));
+        }
+
+        return builder.build();
+    }
+
+    @Bean
+    public SqsClient sqsClient() {
+        var builder = SqsClient.builder()
                 .region(Region.of(region));
 
         if (endpointUrl != null && !endpointUrl.isBlank()) {
