@@ -26,7 +26,7 @@ aws:
 app:
   sqs:
     # URL completa da fila. Se a variável de ambiente não existir, usa um valor dummy para não quebrar o startup
-    queue-url: ${SQS_QUEUE_URL:https://sqs.us-east-2.amazonaws.com/000000000000/feedback-analysis-queue}
+    queue-url: ${SQS_QUEUE_URL:https://sqs.us-east-2.amazonaws.com/990227772490/feedback-analysis-queue}
 
 logging:
   level:
