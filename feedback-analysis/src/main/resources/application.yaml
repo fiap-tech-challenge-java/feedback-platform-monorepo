@@ -9,6 +9,11 @@ spring:
         access-key: test
         secret-key: test
       endpoint: http://localhost:4566 # LocalStack
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
 
 # Listener para rodar no local
 cloud:
