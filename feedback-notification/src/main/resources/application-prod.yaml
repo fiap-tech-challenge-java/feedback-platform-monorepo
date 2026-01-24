@@ -14,15 +14,6 @@ spring:
     function:
       definition: sendNotification
 
-  datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/feedbackdb}
-    username: ${DATABASE_USER:admin}
-    password: ${DATABASE_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 2
-      minimum-idle: 1
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -37,14 +28,14 @@ spring:
 cloud:
   aws:
     region:
-      static: ${AWS_REGION:us-east-1}
+      static: ${AWS_REGION:us-east-2}
     ses:
-      endpoint: ${AWS_SES_ENDPOINT:https://email.us-east-1.amazonaws.com}
+      endpoint: ${AWS_SES_ENDPOINT:https://email.us-east-2.amazonaws.com}
 
 # Application specific
 app:
   ses:
-    from-email: ${SES_FROM_EMAIL:noreply@example.com}
+    from-email: ${SES_FROM_EMAIL:feedbacktech@tuamaeaquelaursa.com}
 
 # Logging otimizado para Lambda
 logging:

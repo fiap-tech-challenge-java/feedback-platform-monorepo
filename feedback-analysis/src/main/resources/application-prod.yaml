@@ -14,15 +14,6 @@ spring:
     function:
       definition: analyzeFeedback
 
-  datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/feedbackdb}
-    username: ${DATABASE_USER:admin}
-    password: ${DATABASE_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 2
-      minimum-idle: 1
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -37,9 +28,9 @@ spring:
 cloud:
   aws:
     region:
-      static: ${AWS_REGION:us-east-1}
+      static: ${AWS_REGION:us-east-2}
     sns:
-      endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-1.amazonaws.com}
+      endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-2.amazonaws.com}
 
 # Application specific
 app:

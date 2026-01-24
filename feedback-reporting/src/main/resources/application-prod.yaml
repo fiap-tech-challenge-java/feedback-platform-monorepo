@@ -15,9 +15,9 @@ spring:
       definition: generateReport
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/feedbackdb}
-    username: ${DATABASE_USER:admin}
-    password: ${DATABASE_PASSWORD:password}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/feedbackdb}
+    username: ${SPRING_DATASOURCE_USERNAME:admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 2
@@ -37,11 +37,11 @@ spring:
 cloud:
   aws:
     region:
-      static: ${AWS_REGION:us-east-1}
+      static: ${AWS_REGION:us-east-2}
     s3:
-      endpoint: ${AWS_S3_ENDPOINT:https://s3.us-east-1.amazonaws.com}
+      endpoint: ${AWS_S3_ENDPOINT:https://s3.us-east-2.amazonaws.com}
     sns:
-      endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-1.amazonaws.com}
+      endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-2.amazonaws.com}
 
 # Application specific
 app:
