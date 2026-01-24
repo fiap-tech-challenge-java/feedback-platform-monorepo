@@ -52,7 +52,7 @@ public class FeedbackInjectionService {
                     .queue(queueUrl) // <--- O PULO DO GATO: Usa a URL completa, não o nome
                     .payload(feedbackEventDTO)
             );
-
+            logger.info("✅ [SQS] Recibo da AWS - MessageId: {}", resultado.messageId());
             // O SqsTemplate do Spring Cloud AWS 3.x já é síncrono por padrão,
             // mas se ele retornar um CompletableFuture no futuro, o .join() garantiria.
             // Do jeito que está, apenas passar a URL correta deve resolver o erro "MessagingOperationFailed".
