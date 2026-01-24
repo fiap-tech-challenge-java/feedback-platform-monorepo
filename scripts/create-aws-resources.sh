@@ -9,7 +9,7 @@
 set -e
 
 # Variáveis - ALTERE CONFORME NECESSÁRIO
-AWS_REGION="us-east-1"
+AWS_REGION="us-east-2"
 PROJECT_NAME="feedback-platform"
 DB_USERNAME="admin"
 DB_PASSWORD="SuaSenhaSegura123!"  # ALTERE ESTA SENHA!

@@ -6,7 +6,7 @@ spring:
       definition: processNotification
     aws:
       region:
-        static: us-east-1
+        static: us-east-2
       credentials:
         access-key: test
         secret-key: test

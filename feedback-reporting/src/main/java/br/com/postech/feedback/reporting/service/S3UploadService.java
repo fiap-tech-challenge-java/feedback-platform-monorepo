@@ -20,7 +20,7 @@ public class S3UploadService {
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
-    @Value("${aws.region:us-east-1}")
+    @Value("${aws.region:us-east-2}")
     private String region;
 
     public String uploadReport(String content, String s3Key, String contentType) {

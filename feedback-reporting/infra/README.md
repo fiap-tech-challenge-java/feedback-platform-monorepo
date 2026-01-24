@@ -16,13 +16,13 @@ DB_PASSWORD=your-secure-password
 REPORT_BUCKET_NAME=postech-feedback-reports
 
 # AWS SNS
-SNS_TOPIC_ARN=arn:aws:sns:us-east-1:123456789012:feedback-notification-topic
+SNS_TOPIC_ARN=arn:aws:sns:us-east-2:123456789012:feedback-notification-topic
 
 # Report Configuration
 REPORT_FORMAT=json  # ou csv
 
 # AWS Region
-AWS_REGION=us-east-1
+AWS_REGION=us-east-2
 ```
 
 ## EventBridge - Cron Semanal
@@ -40,7 +40,7 @@ aws events put-rule \
 # Adicionar a Lambda como target
 aws events put-targets \
     --rule "weekly-report-schedule" \
-    --targets "Id"="ReportingLambdaTarget","Arn"="arn:aws:lambda:us-east-1:123456789012:function:feedback-reporting"
+    --targets "Id"="ReportingLambdaTarget","Arn"="arn:aws:lambda:us-east-2:123456789012:function:feedback-reporting"
 
 # Dar permissão ao EventBridge para invocar a Lambda
 aws lambda add-permission \
@@ -48,7 +48,7 @@ aws lambda add-permission \
     --statement-id EventBridgeInvoke \
     --action lambda:InvokeFunction \
     --principal events.amazonaws.com \
-    --source-arn arn:aws:events:us-east-1:123456789012:rule/weekly-report-schedule
+    --source-arn arn:aws:events:us-east-2:123456789012:rule/weekly-report-schedule
 ```
 
 ### Opção 2: Via JSON (EventBridge Scheduler)
@@ -114,7 +114,7 @@ aws lambda update-function-configuration \
 Criar o bucket para os relatórios:
 
 ```bash
-aws s3 mb s3://postech-feedback-reports --region us-east-1
+aws s3 mb s3://postech-feedback-reports --region us-east-2
 
 # Configurar lifecycle para arquivar relatórios antigos (opcional)
 aws s3api put-bucket-lifecycle-configuration \
@@ -148,7 +148,7 @@ aws lambda create-function \
     --zip-file fileb://target/feedback-reporting-1.0.0-SNAPSHOT-aws.jar \
     --timeout 60 \
     --memory-size 512 \
-    --environment "Variables={DB_HOST=xxx,DB_PORT=5432,DB_NAME=feedback_db,DB_USER=xxx,DB_PASSWORD=xxx,REPORT_BUCKET_NAME=postech-feedback-reports,SNS_TOPIC_ARN=arn:aws:sns:us-east-1:123456789012:feedback-notification-topic,REPORT_FORMAT=json}"
+    --environment "Variables={DB_HOST=xxx,DB_PORT=5432,DB_NAME=feedback_db,DB_USER=xxx,DB_PASSWORD=xxx,REPORT_BUCKET_NAME=postech-feedback-reports,SNS_TOPIC_ARN=arn:aws:sns:us-east-2:123456789012:feedback-notification-topic,REPORT_FORMAT=json}"
 ```
 
 ## Estrutura de Arquivos no S3

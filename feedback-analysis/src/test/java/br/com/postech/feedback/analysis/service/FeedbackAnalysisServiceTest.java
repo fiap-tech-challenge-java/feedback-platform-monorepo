@@ -35,7 +35,7 @@ class FeedbackAnalysisServiceTest {
     @InjectMocks
     private FeedbackAnalysisService service;
 
-    private static final String TOPIC_ARN = "arn:aws:sns:us-east-1:123456789012:feedback-critical";
+    private static final String TOPIC_ARN = "arn:aws:sns:us-east-2:123456789012:feedback-critical";
 
     @BeforeEach
     void setUp() {

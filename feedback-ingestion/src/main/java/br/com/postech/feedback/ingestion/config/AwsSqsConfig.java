@@ -11,7 +11,6 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 
 import java.net.URI;
 
@@ -20,7 +19,7 @@ public class AwsSqsConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(AwsSqsConfig.class);
 
-    @Value("${aws.region:us-east-1}")
+    @Value("${aws.region:us-east-2}")
     private String region;
 
     @Value("${aws.endpoint:#{null}}")
@@ -34,16 +33,31 @@ public class AwsSqsConfig {
 
     @Bean
     public SqsAsyncClient sqsAsyncClient(SqsClient sqsClient) {
-        var builder = SqsAsyncClient.builder()
-                .region(Region.of(region));
+        logger.info("🔧 [AWS] Inicializando SqsAsyncClient...");
+        logger.debug("🔧 [AWS] Region: {}, IsLocalStack: {}", region, isLocalStack());
 
-        if (isLocalStack()) {
-            builder.endpointOverride(URI.create(endpoint))
-                    .credentialsProvider(StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create(accessKey, secretKey)));
+        try {
+            var builder = SqsAsyncClient.builder()
+                    .region(Region.of(region));
+
+            if (isLocalStack()) {
+                logger.info("🔧 [AWS] LocalStack detectado - configurando SqsAsyncClient com endpoint: {}", endpoint);
+                builder.endpointOverride(URI.create(endpoint))
+                        .credentialsProvider(StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create(accessKey, secretKey)));
+            } else {
+                logger.info("🔧 [AWS] AWS Produção detectado - SqsAsyncClient usará credenciais IAM");
+            }
+
+            SqsAsyncClient client = builder.build();
+            logger.info("✅ [AWS] SqsAsyncClient inicializado com sucesso!");
+
+            return client;
+
+        } catch (Exception e) {
+            logger.error("❌ [AWS] Erro ao inicializar SqsAsyncClient: {}", e.getMessage(), e);
+            throw e;
         }
-
-        return builder.build();
     }
 
     private boolean isLocalStack() {

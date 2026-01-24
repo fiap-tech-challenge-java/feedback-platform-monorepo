@@ -22,7 +22,7 @@ import java.net.URI;
 @Configuration
 public class AwsConfig {
 
-    @Value("${aws.region:us-east-1}")
+    @Value("${aws.region:us-east-2}")
     private String region;
 
     @Value("${aws.endpoint:#{null}}")

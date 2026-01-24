@@ -5,6 +5,8 @@ import br.com.postech.feedback.ingestion.domain.FeedbackResponse;
 import br.com.postech.feedback.ingestion.domain.dto.FeedbackRequest;
 import br.com.postech.feedback.ingestion.domain.mapper.FeedbackInjectionApiMapper;
 import br.com.postech.feedback.ingestion.domain.service.FeedbackInjectionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -18,6 +20,8 @@ import java.util.function.Function;
 @EntityScan(basePackages = "br.com.postech.feedback.core.domain")
 public class FeedbackIngestionApplication {
 
+	private static final Logger logger = LoggerFactory.getLogger(FeedbackIngestionApplication.class);
+
 	public static void main(String[] args) {
 		SpringApplication.run(FeedbackIngestionApplication.class, args);
 	}
@@ -30,11 +34,32 @@ public class FeedbackIngestionApplication {
 	@Bean
 	public Function<FeedbackRequest, FeedbackResponse> ingestFeedback(FeedbackInjectionService feedbackInjectionService) {
 		return feedbackRequest -> {
-			FeedbackInjectionApiMapper mapper = FeedbackInjectionApiMapper.INSTANCE;
-			Feedback feedback = feedbackInjectionService.processFeedback(
-					mapper.mapToCriacaoFeedback(feedbackRequest)
-			);
-			return mapper.mapToFeedbackResponse(feedback);
+			long startTime = System.currentTimeMillis();
+
+			logger.info("🔧 [LAMBDA] Função ingestFeedback invocada");
+			logger.debug("🔧 [LAMBDA] Payload: description='{}', rating={}",
+					feedbackRequest.description(), feedbackRequest.rating());
+
+			try {
+				FeedbackInjectionApiMapper mapper = FeedbackInjectionApiMapper.INSTANCE;
+				Feedback feedback = feedbackInjectionService.processFeedback(
+						mapper.mapToCreateFeedback(feedbackRequest)
+				);
+
+				long duration = System.currentTimeMillis() - startTime;
+				FeedbackResponse response = mapper.mapToFeedbackResponse(feedback);
+
+				logger.info("✅ [LAMBDA] Função concluída com sucesso - ID: {}, Duração: {}ms",
+						response.id(), duration);
+
+				return response;
+
+			} catch (Exception e) {
+				long duration = System.currentTimeMillis() - startTime;
+				logger.error("❌ [LAMBDA] Erro na função ingestFeedback - Duração: {}ms, Erro: {}",
+						duration, e.getMessage(), e);
+				throw e;
+			}
 		};
 	}
 

@@ -13,7 +13,7 @@ import java.net.URI;
 @Configuration
 public class AwsConfig {
 
-    @Value("${spring.cloud.aws.region.static:us-east-1}")
+    @Value("${spring.cloud.aws.region.static:us-east-2}")
     private String region;
 
     // Se essa variável estiver preenchida (no YAML), usamos ela (LocalStack).

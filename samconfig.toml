@@ -22,7 +22,7 @@ capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 confirm_changeset = true
 resolve_s3 = true
 s3_prefix = "feedback-platform"
-region = "us-east-1"
+region = "us-east-2"
 image_repositories = []
 
 [default.package.parameters]
@@ -44,7 +44,7 @@ warm_containers = "EAGER"
 [dev.deploy.parameters]
 stack_name = "feedback-platform-dev"
 s3_prefix = "feedback-platform-dev"
-region = "us-east-1"
+region = "us-east-2"
 confirm_changeset = false
 capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 parameter_overrides = "Environment=\"dev\""
@@ -56,7 +56,7 @@ parameter_overrides = "Environment=\"dev\""
 [staging.deploy.parameters]
 stack_name = "feedback-platform-staging"
 s3_prefix = "feedback-platform-staging"
-region = "us-east-1"
+region = "us-east-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 parameter_overrides = "Environment=\"staging\""
@@ -68,7 +68,7 @@ parameter_overrides = "Environment=\"staging\""
 [prod.deploy.parameters]
 stack_name = "feedback-platform-prod"
 s3_prefix = "feedback-platform-prod"
-region = "us-east-1"
+region = "us-east-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 parameter_overrides = "Environment=\"prod\""

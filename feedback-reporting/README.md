@@ -60,9 +60,9 @@ docker exec feedback-aws awslocal sqs create-queue --queue-name report-notificat
 
 # Inscrever fila no tópico SNS
 docker exec feedback-aws awslocal sns subscribe \
-  --topic-arn arn:aws:sns:us-east-1:000000000000:feedback-notification-topic \
+  --topic-arn arn:aws:sns:us-east-2:000000000000:feedback-notification-topic \
   --protocol sqs \
-  --notification-endpoint arn:aws:sqs:us-east-1:000000000000:report-notifications
+  --notification-endpoint arn:aws:sqs:us-east-2:000000000000:report-notifications
 ```
 
 ### 3️⃣ Verificar Recursos Criados
@@ -157,7 +157,7 @@ curl -X POST http://localhost:8080/generateReport \
   "averageScore": 3.8,
   "statusCode": 200,
   "totalFeedbacks": 10,
-  "reportUrl": "https://postech-feedback-reports.s3.us-east-1.amazonaws.com/reports/2026/01/report-2026-01-16.json",
+  "reportUrl": "https://postech-feedback-reports.s3.us-east-2.amazonaws.com/reports/2026/01/report-2026-01-16.json",
   "message": "Weekly report generated successfully"
 }
 ```

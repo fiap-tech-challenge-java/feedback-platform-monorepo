@@ -102,7 +102,7 @@ aws --version       # aws-cli/2.x.x
 aws configure
 # AWS Access Key ID: <sua-access-key>
 # AWS Secret Access Key: <sua-secret-key>
-# Default region name: us-east-1
+# Default region name: us-east-2
 # Default output format: json
 ```
 
@@ -151,7 +151,7 @@ Durante o deploy guiado (`--guided`), você será perguntado:
 | Parâmetro | Descrição | Exemplo |
 |-----------|-----------|---------|
 | Stack Name | Nome do stack CloudFormation | `feedback-platform-dev` |
-| AWS Region | Região AWS | `us-east-1` |
+| AWS Region | Região AWS | `us-east-2` |
 | Environment | Ambiente (dev/staging/prod) | `dev` |
 | DatabaseUrl | URL JDBC do RDS | `jdbc:postgresql://xxx.rds.amazonaws.com:5432/feedbackdb` |
 | DatabaseUsername | Usuário do banco | `admin` |
@@ -199,7 +199,7 @@ Após o deploy, você receberá a URL da API:
 
 ```bash
 # Criar feedback
-curl -X POST https://xxx.execute-api.us-east-1.amazonaws.com/dev/feedbacks \
+curl -X POST https://xxx.execute-api.us-east-2.amazonaws.com/dev/feedbacks \
   -H "Content-Type: application/json" \
   -d '{
     "studentId": 1,
@@ -210,10 +210,10 @@ curl -X POST https://xxx.execute-api.us-east-1.amazonaws.com/dev/feedbacks \
   }'
 
 # Listar feedbacks
-curl https://xxx.execute-api.us-east-1.amazonaws.com/dev/feedbacks
+curl https://xxx.execute-api.us-east-2.amazonaws.com/dev/feedbacks
 
 # Buscar por ID
-curl https://xxx.execute-api.us-east-1.amazonaws.com/dev/feedbacks/1
+curl https://xxx.execute-api.us-east-2.amazonaws.com/dev/feedbacks/1
 ```
 
 ## 💰 Custos (Free Tier)

@@ -24,14 +24,14 @@ server:
 
 # AWS Configuration
 aws:
-  region: ${AWS_REGION:us-east-1}
+  region: ${AWS_REGION:us-east-2}
   endpoint: ${AWS_ENDPOINT:http://localhost:4566}
   access-key: ${AWS_ACCESS_KEY_ID:test}
   secret-key: ${AWS_SECRET_ACCESS_KEY:test}
   s3:
     bucket-name: ${REPORT_BUCKET_NAME:postech-feedback-reports}
   sns:
-    topic-arn: ${SNS_TOPIC_ARN:arn:aws:sns:us-east-1:000000000000:feedback-notification-topic}
+    topic-arn: ${SNS_TOPIC_ARN:arn:aws:sns:us-east-2:000000000000:feedback-notification-topic}
 
 # Report Configuration
 reporting:

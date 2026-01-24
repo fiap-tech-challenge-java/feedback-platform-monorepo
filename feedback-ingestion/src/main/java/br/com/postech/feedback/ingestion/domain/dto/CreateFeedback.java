@@ -1,6 +1,6 @@
 package br.com.postech.feedback.ingestion.domain.dto;
 
-public record CriacaoFeedback(
+public record CreateFeedback(
         String description,
         Integer rating
 ) {

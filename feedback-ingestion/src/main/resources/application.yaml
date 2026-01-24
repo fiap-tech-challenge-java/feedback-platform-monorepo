@@ -10,7 +10,7 @@ spring:
       ddl-auto: create-drop
 
 aws:
-  region: us-east-1
+  region: us-east-2
   endpoint: http://localhost:4566
   access-key: test
   secret-key: test

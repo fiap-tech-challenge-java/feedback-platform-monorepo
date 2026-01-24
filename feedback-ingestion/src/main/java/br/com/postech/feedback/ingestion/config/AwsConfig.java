@@ -12,7 +12,6 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 
 import java.net.URI;
 
@@ -21,7 +20,7 @@ public class AwsConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(AwsConfig.class);
 
-    @Value("${aws.region:us-east-1}")
+    @Value("${aws.region:us-east-2}")
     private String region;
 
     @Value("${aws.endpoint:#{null}}")
@@ -35,39 +34,40 @@ public class AwsConfig {
 
     @Bean
     public SqsClient sqsClient() {
-        var builder = SqsClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(credentialsProvider());
+        logger.info("🔧 [AWS] Inicializando SqsClient...");
+        logger.debug("🔧 [AWS] Region: {}, Endpoint: {}, IsLocalStack: {}",
+                region, endpoint != null ? endpoint : "NONE", isLocalStack());
 
-        if (isLocalStack()) {
-            builder.endpointOverride(URI.create(endpoint));
-        }
-
-        SqsClient client = builder.build();
-
-        // Criar a fila ANTES do SqsTemplate tentar enviar mensagens
-        if (isLocalStack()) {
-            createQueueIfNotExists(client);
-        }
-
-        return client;
-    }
-
-    private void createQueueIfNotExists(SqsClient sqsClient) {
-        String queueName = AwsConfigConstants.QUEUE_INGESTION_ANALYSIS;
         try {
-            var response = sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build());
-            logger.info("✓ SQS queue '{}' created: {}", queueName, response.queueUrl());
+            var builder = SqsClient.builder()
+                    .region(Region.of(region))
+                    .credentialsProvider(credentialsProvider());
+
+            if (isLocalStack()) {
+                logger.info("🔧 [AWS] LocalStack detectado - usando endpoint: {}", endpoint);
+                builder.endpointOverride(URI.create(endpoint));
+            } else {
+                logger.info("🔧 [AWS] AWS Produção detectado - usando credenciais IAM");
+            }
+
+            SqsClient client = builder.build();
+            logger.info("✅ [AWS] SqsClient inicializado com sucesso!");
+
+            return client;
+
         } catch (Exception e) {
-            logger.info("✓ SQS queue '{}' already exists or error: {}", queueName, e.getMessage());
+            logger.error("❌ [AWS] Erro ao inicializar SqsClient: {}", e.getMessage(), e);
+            throw e;
         }
     }
 
     private AwsCredentialsProvider credentialsProvider() {
         if (isLocalStack()) {
+            logger.debug("🔧 [AWS] Usando credenciais estáticas para LocalStack");
             return StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(accessKey, secretKey));
         }
+        logger.debug("🔧 [AWS] Usando credenciais padrão (IAM) para AWS");
         return DefaultCredentialsProvider.create();
     }
 

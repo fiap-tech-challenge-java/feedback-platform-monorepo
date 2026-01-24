@@ -20,8 +20,11 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 2  # Lambda tem conexões limitadas
-      minimum-idle: 1
+      maximum-pool-size: 2
+      minimum-idle: 0  # ⭐ CRÍTICO: Não cria conexões no startup (timeout fix)
+      connection-timeout: 5000  # 5s timeout (ao invés de 30s padrão)
+      initialization-fail-timeout: -1  # Não falha se DB não está disponível no startup
+      auto-commit: true
 
   jpa:
     hibernate:
@@ -44,14 +47,25 @@ cloud:
 # Application specific
 app:
   sqs:
-    queue-url: ${SQS_QUEUE_URL:}
+    queue-url: ${SQS_QUEUE_URL:https://sqs.us-east-2.amazonaws.com/990227772490/feedback-analysis-queue}
+
+# AWS Resources Auto-Initialization
+aws:
+  resources:
+    auto-init: false  # ⭐ CRÍTICO: Desabilita CommandLineRunner em produção para evitar timeout
 
 # Logging otimizado para Lambda
 logging:
   level:
     root: INFO
-    br.com.postech: INFO
+    br.com.postech: DEBUG
     org.springframework: WARN
-    org.hibernate: WARN
+    org.springframework.boot.context.config: INFO
+    org.springframework.boot.autoconfigure.orm.jpa: DEBUG  # Log JPA/Hibernate
+    org.springframework.orm.jpa: DEBUG  # Log entity manager factory
+    org.hibernate: DEBUG  # Aumentado para DEBUG
+    org.hibernate.dialect: INFO  # Log do dialeto
+    org.hibernate.cfg: DEBUG  # Log da configuração
+    com.zaxxer.hikari: DEBUG
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

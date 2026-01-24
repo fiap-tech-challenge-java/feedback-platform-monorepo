@@ -26,9 +26,9 @@ docker exec feedback-aws awslocal s3 mb s3://postech-feedback-reports 2>/dev/nul
 docker exec feedback-aws awslocal sns create-topic --name feedback-notification-topic 2>/dev/null || echo "Topic já existe"
 docker exec feedback-aws awslocal sqs create-queue --queue-name report-notifications 2>/dev/null || echo "Queue já existe"
 docker exec feedback-aws awslocal sns subscribe \
-  --topic-arn arn:aws:sns:us-east-1:000000000000:feedback-notification-topic \
+  --topic-arn arn:aws:sns:us-east-2:000000000000:feedback-notification-topic \
   --protocol sqs \
-  --notification-endpoint arn:aws:sqs:us-east-1:000000000000:report-notifications 2>/dev/null || true
+  --notification-endpoint arn:aws:sqs:us-east-2:000000000000:report-notifications 2>/dev/null || true
 
 echo ""
 echo "5️⃣  Listando recursos criados..."
