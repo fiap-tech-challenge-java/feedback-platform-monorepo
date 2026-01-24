@@ -5,11 +5,14 @@ import br.com.postech.feedback.core.dto.FeedbackEventDTO;
 import br.com.postech.feedback.core.repository.FeedbackRepository;
 import br.com.postech.feedback.core.utils.FeedbackMapper;
 import br.com.postech.feedback.ingestion.domain.dto.CreateFeedback;
-import io.awspring.cloud.sqs.operations.SqsTemplate;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value; // <--- IMPORTANTE
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 @Service
 public class FeedbackInjectionService {
@@ -17,54 +20,63 @@ public class FeedbackInjectionService {
     private static final Logger logger = LoggerFactory.getLogger(FeedbackInjectionService.class);
 
     private final FeedbackRepository feedbackRepository;
-    private final SqsTemplate sqsTemplate;
+    private final SqsClient sqsClient; // Cliente nativo configurado no AwsConfig
+    private final ObjectMapper objectMapper; // Para converter objeto em JSON string
 
-    // 1. Injetar a URL completa que está no application-prod.yaml
-    @Value("${app.sqs.queue-url}")
+    // Injeção da URL da fila definida no application.yaml
+    @Value("${app.sqs.queue-url:https://sqs.us-east-2.amazonaws.com/000000000000/feedback-analysis-queue}")
     private String queueUrl;
 
-    public FeedbackInjectionService(FeedbackRepository feedbackRepository, SqsTemplate sqsTemplate) {
+    public FeedbackInjectionService(FeedbackRepository feedbackRepository,
+                                    SqsClient sqsClient,
+                                    ObjectMapper objectMapper) {
         this.feedbackRepository = feedbackRepository;
-        this.sqsTemplate = sqsTemplate;
+        this.sqsClient = sqsClient;
+        this.objectMapper = objectMapper;
     }
 
     public Feedback processFeedback(CreateFeedback createFeedback) {
         logger.info("📝 [INGESTION] Feedback recebido - description: '{}', rating: {}",
                 createFeedback.description(), createFeedback.rating());
 
+        // 1. Converter DTO para Entidade
         Feedback feedback = new Feedback(
                 createFeedback.description(),
                 createFeedback.rating()
         );
 
-        // Salvar no Banco
+        // 2. Salvar no Banco (PostgreSQL)
         logger.info("💾 [DATABASE] Iniciando salvamento no PostgreSQL...");
         feedbackRepository.save(feedback);
         logger.info("✅ [DATABASE] Feedback salvo! ID: {}", feedback.getId());
 
-        // Enviar para SQS
+        // 3. Enviar para SQS
         try {
-            logger.info("📤 [SQS] Enviando para URL: '{}'", queueUrl); // Log para conferir
+            logger.info("📤 [SQS] Preparando envio para URL: '{}'", queueUrl);
+
             FeedbackEventDTO feedbackEventDTO = FeedbackMapper.toEvent(feedback);
+            String messageBody = objectMapper.writeValueAsString(feedbackEventDTO);
 
-            // 2. USAR A VARIÁVEL queueUrl AQUI (Com .join() para garantir)
-            var resultado = sqsTemplate.send(to -> to
-                    .queue(queueUrl) // <--- O PULO DO GATO: Usa a URL completa, não o nome
-                    .payload(feedbackEventDTO)
-            );
-            logger.info("✅ [SQS] Recibo da AWS - MessageId: {}", resultado.messageId());
-            // O SqsTemplate do Spring Cloud AWS 3.x já é síncrono por padrão,
-            // mas se ele retornar um CompletableFuture no futuro, o .join() garantiria.
-            // Do jeito que está, apenas passar a URL correta deve resolver o erro "MessagingOperationFailed".
+            SendMessageRequest sendMsgRequest = SendMessageRequest.builder()
+                    .queueUrl(queueUrl)
+                    .messageBody(messageBody)
+                    .build();
 
-            logger.info("✅ [SQS] Enviado com sucesso! ID: {}", feedback.getId());
+            var response = sqsClient.sendMessage(sendMsgRequest);
+
+            logger.info("✅ [SQS] Enviado com sucesso! MessageId: {}", response.messageId());
+
             return feedback;
+
+        } catch (JsonProcessingException e) {
+            logger.error("❌ [SQS] Erro ao converter objeto para JSON: {}", e.getMessage(), e);
+            throw new RuntimeException("Erro na serialização do feedback", e);
+
         } catch (Exception e) {
-            logger.error("❌ [SQS] FALHA FATAL: {}", e.getMessage(), e);
-            // Não relançar erro para não travar o retorno HTTP, já que salvou no banco?
-            // Depende da sua regra. Se SQS falhar, o cliente deve saber?
-            // Para o desafio, pode deixar o throw e.
-            throw e;
+            logger.error("❌ [SQS] FALHA FATAL ao comunicar com AWS: {}", e.getMessage(), e);
+            // Em arquitetura serverless orientada a eventos, se falhar o envio da mensagem,
+            // geralmente queremos que a Lambda falhe para o DLQ capturar ou ocorrer retry.
+            throw new RuntimeException("Erro ao enviar mensagem para o SQS", e);
         }
     }
 }

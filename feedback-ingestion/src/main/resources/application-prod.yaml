@@ -1,71 +1,34 @@
-# ===========================================
-# Configuração AWS Lambda para Produção
-# ===========================================
-# Profile: prod
-# ===========================================
-
 spring:
-  profiles:
-    active: prod
-  main:
-    web-application-type: none  # Lambda não precisa de web server
-    
-  cloud:
-    function:
-      definition: ingestFeedback
-
+  config:
+    activate:
+      on-profile: prod
+  
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/feedbackdb}
-    username: ${SPRING_DATASOURCE_USERNAME:admin}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    # A URL deve vir da variável de ambiente definida no Lambda Configuration
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 2
-      minimum-idle: 0  # ⭐ CRÍTICO: Não cria conexões no startup (timeout fix)
-      connection-timeout: 5000  # 5s timeout (ao invés de 30s padrão)
-      initialization-fail-timeout: -1  # Não falha se DB não está disponível no startup
-      auto-commit: true
+      minimum-idle: 0
+      connection-timeout: 10000
+      initialization-fail-timeout: 0
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: false
-    open-in-view: false
+# Configuração AWS
+aws:
+  region: us-east-2
+  # Em PROD, endpoint deve ser vazio ou null para usar o padrão da AWS
+  endpoint: ""
+  # Não definimos access-key/secret-key aqui para forçar o uso da IAM Role
 
-# AWS Configuration
-cloud:
-  aws:
-    region:
-      static: ${AWS_REGION:us-east-2}
-    sqs:
-      endpoint: ${AWS_SQS_ENDPOINT:https://sqs.us-east-2.amazonaws.com}
-
-# Application specific
+# Configuração da Aplicação
 app:
   sqs:
-    queue-url: ${SQS_QUEUE_URL:https://sqs.us-east-2.amazonaws.com/990227772490/feedback-analysis-queue}
+    # URL completa da fila. Se a variável de ambiente não existir, usa um valor dummy para não quebrar o startup
+    queue-url: ${SQS_QUEUE_URL:https://sqs.us-east-2.amazonaws.com/000000000000/feedback-analysis-queue}
 
-# AWS Resources Auto-Initialization
-aws:
-  resources:
-    auto-init: false  # ⭐ CRÍTICO: Desabilita CommandLineRunner em produção para evitar timeout
-
-# Logging otimizado para Lambda
 logging:
   level:
     root: INFO
-    br.com.postech: DEBUG
-    org.springframework: WARN
-    org.springframework.boot.context.config: INFO
-    org.springframework.boot.autoconfigure.orm.jpa: DEBUG  # Log JPA/Hibernate
-    org.springframework.orm.jpa: DEBUG  # Log entity manager factory
-    org.hibernate: DEBUG  # Aumentado para DEBUG
-    org.hibernate.dialect: INFO  # Log do dialeto
-    org.hibernate.cfg: DEBUG  # Log da configuração
-    com.zaxxer.hikari: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    br.com.postech: INFO

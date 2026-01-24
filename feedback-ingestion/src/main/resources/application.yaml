@@ -16,3 +16,8 @@ aws:
   secret-key: test
   sqs:
     queue-name: feedback-analysis-queue
+
+  # Application specific
+  app:
+    sqs:
+      queue-url: ${SQS_QUEUE_URL:https://sqs.us-east-2.amazonaws.com/990227772490/feedback-analysis-queue}

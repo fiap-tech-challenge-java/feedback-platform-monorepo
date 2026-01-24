@@ -1,6 +1,5 @@
 package br.com.postech.feedback.ingestion.config;
 
-import br.com.postech.feedback.core.config.AwsConfigConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,55 +22,43 @@ public class AwsConfig {
     @Value("${aws.region:us-east-2}")
     private String region;
 
-    @Value("${aws.endpoint:#{null}}")
+    // Se aws.endpoint não estiver definido, será uma String vazia, indicando ambiente Prod real
+    @Value("${aws.endpoint:}")
     private String endpoint;
 
-    @Value("${aws.access-key:#{null}}")
+    @Value("${aws.access-key:}")
     private String accessKey;
 
-    @Value("${aws.secret-key:#{null}}")
+    @Value("${aws.secret-key:}")
     private String secretKey;
 
     @Bean
     public SqsClient sqsClient() {
-        logger.info("🔧 [AWS] Inicializando SqsClient...");
-        logger.debug("🔧 [AWS] Region: {}, Endpoint: {}, IsLocalStack: {}",
-                region, endpoint != null ? endpoint : "NONE", isLocalStack());
+        boolean isLocal = isLocalStack();
+        logger.info("🔧 [AWS Config] Inicializando SqsClient. Ambiente LocalStack? {}", isLocal);
 
-        try {
-            var builder = SqsClient.builder()
-                    .region(Region.of(region))
-                    .credentialsProvider(credentialsProvider());
+        var builder = SqsClient.builder()
+                .region(Region.of(region))
+                .credentialsProvider(getCredentialsProvider(isLocal));
 
-            if (isLocalStack()) {
-                logger.info("🔧 [AWS] LocalStack detectado - usando endpoint: {}", endpoint);
-                builder.endpointOverride(URI.create(endpoint));
-            } else {
-                logger.info("🔧 [AWS] AWS Produção detectado - usando credenciais IAM");
-            }
-
-            SqsClient client = builder.build();
-            logger.info("✅ [AWS] SqsClient inicializado com sucesso!");
-
-            return client;
-
-        } catch (Exception e) {
-            logger.error("❌ [AWS] Erro ao inicializar SqsClient: {}", e.getMessage(), e);
-            throw e;
+        if (isLocal) {
+            logger.info("🔧 [AWS Config] Override de Endpoint para: {}", endpoint);
+            builder.endpointOverride(URI.create(endpoint));
         }
+
+        return builder.build();
     }
 
-    private AwsCredentialsProvider credentialsProvider() {
-        if (isLocalStack()) {
-            logger.debug("🔧 [AWS] Usando credenciais estáticas para LocalStack");
+    private AwsCredentialsProvider getCredentialsProvider(boolean isLocal) {
+        if (isLocal) {
             return StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(accessKey, secretKey));
         }
-        logger.debug("🔧 [AWS] Usando credenciais padrão (IAM) para AWS");
+        // Em Produção (Lambda), usa a Role associada à função automaticamente
         return DefaultCredentialsProvider.create();
     }
 
     private boolean isLocalStack() {
-        return endpoint != null && !endpoint.isEmpty();
+        return endpoint != null && !endpoint.isBlank();
     }
 }
