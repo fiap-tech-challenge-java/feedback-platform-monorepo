@@ -1,16 +1,26 @@
+# ===========================================
+# Configuração AWS Lambda - Feedback Reporting
+# ===========================================
+
 spring:
   application:
     name: feedback-reporting
   main:
-    web-application-type: servlet
+    web-application-type: none  # Lambda não precisa de web server
+
   cloud:
     function:
       definition: generateReport
+
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:feedback_db}
-    username: ${DB_USER:user_feedback}
-    password: ${DB_PASSWORD:password_feedback}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/feedbackdb}
+    username: ${SPRING_DATASOURCE_USERNAME:admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 1
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,27 +28,37 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
-server:
-  port: ${SERVER_PORT:8080}
+        format_sql: false
+    open-in-view: false
 
 # AWS Configuration
+cloud:
+  aws:
+    region:
+      static: ${AWS_REGION:us-east-2}
+    s3:
+      endpoint: ${AWS_S3_ENDPOINT:https://s3.us-east-2.amazonaws.com}
+    sns:
+      endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-2.amazonaws.com}
+
+# Application specific
 aws:
   region: ${AWS_REGION:us-east-2}
-  endpoint: ${AWS_ENDPOINT:http://localhost:4566}
-  access-key: ${AWS_ACCESS_KEY_ID:test}
-  secret-key: ${AWS_SECRET_ACCESS_KEY:test}
   s3:
-    bucket-name: ${REPORT_BUCKET_NAME:postech-feedback-reports}
+    bucket-name: ${S3_BUCKET_NAME:postech-feedback-reports}
   sns:
-    topic-arn: ${SNS_TOPIC_ARN:arn:aws:sns:us-east-2:000000000000:feedback-notification-topic}
+    topic-arn: ${SNS_TOPIC_ARN:}
 
 # Report Configuration
 reporting:
   format: ${REPORT_FORMAT:json}
 
-# Logging
+# Logging otimizado para Lambda
 logging:
   level:
     root: INFO
-    br.com.postech.feedback: DEBUG
+    br.com.postech: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

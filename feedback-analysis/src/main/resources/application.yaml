@@ -1,31 +1,45 @@
+# ===========================================
+# Configuração AWS Lambda - Feedback Analysis
+# ===========================================
+
 spring:
   application:
     name: feedback-analysis
+  main:
+    web-application-type: none  # Lambda não precisa de web server
+
   cloud:
-    aws:
-      region:
-        static: us-east-2
-      credentials:
-        access-key: test
-        secret-key: test
-      endpoint: http://localhost:4566 # LocalStack
+    function:
+      definition: analyzeFeedback
+
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
 
-# Listener para rodar no local
+# AWS Configuration
 cloud:
   aws:
-    sqs:
-      listener:
-        auto-startup: true
-        wait-time-out: 5s # Polling rápido para teste
+    region:
+      static: ${AWS_REGION:us-east-2}
+    sns:
+      endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-2.amazonaws.com}
 
+# Application specific
 aws:
   sqs:
-    queue-name: feedback-analysis-queue
+    queue-name: ${SQS_QUEUE_NAME:feedback-analysis-queue}
   sns:
     topic:
-      arn: arn:aws:sns:us-east-2:000000000000:feedback-notification-topic
+      arn: ${SNS_TOPIC_ARN:arn:aws:sns:us-east-2:000000000000:feedback-notification-topic}
+
+# Logging otimizado para Lambda
+logging:
+  level:
+    root: INFO
+    br.com.postech: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

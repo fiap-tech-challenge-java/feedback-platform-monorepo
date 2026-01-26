@@ -1,28 +1,48 @@
+# ===========================================
+# Configuração AWS Lambda - Feedback Notification
+# ===========================================
+
 spring:
   application:
     name: feedback-notification
+  main:
+    web-application-type: none  # Lambda não precisa de web server
+
   cloud:
     function:
-      definition: processNotification
-    aws:
-      region:
-        static: us-east-2
-      credentials:
-        access-key: test
-        secret-key: test
-      endpoint: http://localhost:4566 # Aponta para o LocalStack
+      definition: sendNotification
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+
+# AWS Configuration
+cloud:
+  aws:
+    region:
+      static: ${AWS_REGION:us-east-2}
+    ses:
+      endpoint: ${AWS_SES_ENDPOINT:https://email.us-east-2.amazonaws.com}
+
+# Application specific
+app:
+  ses:
+    from-email: ${SES_FROM_EMAIL:feedbacktech@tuamaeaquelaursa.com}
 
 aws:
   ses:
-    sender-email: noreply@feedbackplatform.com
-    recipient-email: admin@feedbackplatform.com
-    enabled: false  # Desabilitado para testes sem LocalStack
+    sender-email: ${SES_FROM_EMAIL:feedbacktech@tuamaeaquelaursa.com}
+    recipient-email: ${SES_RECIPIENT_EMAIL:admin@feedbackplatform.com}
+    enabled: true
+
+# Logging otimizado para Lambda
+logging:
+  level:
+    root: INFO
+    br.com.postech: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
