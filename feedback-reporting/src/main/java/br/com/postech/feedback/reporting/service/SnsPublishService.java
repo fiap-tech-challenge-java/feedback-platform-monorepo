@@ -20,7 +20,7 @@ public class SnsPublishService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${aws.sns.topic-arn}")
+    @Value("${aws.sns.topic-arn:arn:aws:sns:us-east-2:990227772490:feedback-notifications}")
     private String topicArn;
 
     public void publishReportReadyEvent(String reportUrl, LocalDateTime generatedAt) {
