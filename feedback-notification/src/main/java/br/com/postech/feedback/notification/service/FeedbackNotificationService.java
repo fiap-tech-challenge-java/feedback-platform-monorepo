@@ -39,7 +39,7 @@ public class FeedbackNotificationService {
     @Value("${aws.ses.sender-email:matheusfreiredev@gmail.com}")
     private String senderEmail;
 
-    @Value("${aws.ses.recipient-email}")
+    @Value("${aws.ses.recipient-email:matheusfreiredev@gmail.com}")
     private String recipientEmail;
 
     @Value("${aws.ses.enabled:true}")
