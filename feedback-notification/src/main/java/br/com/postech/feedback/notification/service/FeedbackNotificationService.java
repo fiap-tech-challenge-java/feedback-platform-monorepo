@@ -122,26 +122,40 @@ public class FeedbackNotificationService {
 
     /**
      * Extrai o FeedbackEventDTO da mensagem, suportando:
-     * 1. Formato SNS (com campo "Message")
-     * 2. FeedbackEventDTO direto (para testes)
+     * 1. Formato SNS via Lambda (Records[].Sns.Message)
+     * 2. Formato SNS direto (com campo "Message")
+     * 3. FeedbackEventDTO direto (para testes)
      */
     private FeedbackEventDTO extractFeedbackEvent(String message) throws Exception {
         try {
             // Tenta parsear como JSON
             JsonNode rootNode = objectMapper.readTree(message);
 
-            // Verifica se é uma mensagem SNS (tem campo "Message")
+            // Verifica se é formato SNS via Lambda (tem campo "Records")
+            if (rootNode.has("Records")) {
+                log.debug("Detectado formato SNS via Lambda (Records)");
+                JsonNode records = rootNode.path("Records");
+                if (records.isArray() && !records.isEmpty()) {
+                    JsonNode snsNode = records.get(0).path("Sns");
+                    String messageBody = snsNode.path("Message").asText();
+                    return objectMapper.readValue(messageBody, FeedbackEventDTO.class);
+                }
+                throw new IllegalArgumentException("Records array vazio ou inválido");
+            }
+
+            // Verifica se é uma mensagem SNS direta (tem campo "Message")
             if (rootNode.has("Message")) {
-                log.debug("Detectado formato SNS");
+                log.debug("Detectado formato SNS direto");
                 String messageBody = rootNode.path("Message").asText();
 
                 // Parse do conteúdo real (FeedbackEventDTO)
                 return objectMapper.readValue(messageBody, FeedbackEventDTO.class);
-            } else {
-                // Assume que é FeedbackEventDTO direto
-                log.debug("Detectado formato FeedbackEventDTO direto");
-                return objectMapper.readValue(message, FeedbackEventDTO.class);
             }
+
+            // Assume que é FeedbackEventDTO direto
+            log.debug("Detectado formato FeedbackEventDTO direto");
+            return objectMapper.readValue(message, FeedbackEventDTO.class);
+
         } catch (Exception e) {
             log.error("Erro ao fazer parse da mensagem: {}", message, e);
             throw e;
