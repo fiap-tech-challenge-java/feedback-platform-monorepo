@@ -17,7 +17,7 @@ public class S3UploadService {
 
     private final S3Client s3Client;
 
-    @Value("${aws.s3.bucket-name}")
+    @Value("${aws.s3.bucket-name:feedback-reports-990227772490}")
     private String bucketName;
 
     @Value("${aws.region:us-east-2}")
