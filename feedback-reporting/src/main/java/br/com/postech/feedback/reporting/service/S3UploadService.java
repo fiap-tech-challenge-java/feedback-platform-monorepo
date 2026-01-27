@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.nio.charset.StandardCharsets;
 
@@ -25,6 +26,7 @@ public class S3UploadService {
 
     public String uploadReport(String content, String s3Key, String contentType) {
         log.info("Uploading report to S3 - Bucket: {}, Key: {}", bucketName, s3Key);
+        log.info("Report content size: {} bytes", content.getBytes(StandardCharsets.UTF_8).length);
 
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -33,14 +35,23 @@ public class S3UploadService {
                     .contentType(contentType)
                     .build();
 
-            s3Client.putObject(putObjectRequest,
+            PutObjectResponse response = s3Client.putObject(putObjectRequest,
                     RequestBody.fromBytes(content.getBytes(StandardCharsets.UTF_8)));
 
             String reportUrl = generateS3Url(s3Key);
-            log.info("Report uploaded successfully to: {}", reportUrl);
+
+            log.info("=== S3 UPLOAD SUCCESS ===");
+            log.info("ETag: {}", response.eTag());
+            log.info("VersionId: {}", response.versionId());
+            log.info("Report URL: {}", reportUrl);
+            log.info("=========================");
+
             return reportUrl;
         } catch (Exception e) {
-            log.error("Failed to upload report to S3: {}", e.getMessage());
+            log.error("=== S3 UPLOAD FAILED ===");
+            log.error("Bucket: {}, Key: {}", bucketName, s3Key);
+            log.error("Error: {}", e.getMessage(), e);
+            log.error("========================");
             throw new RuntimeException("Failed to upload report to S3", e);
         }
     }
