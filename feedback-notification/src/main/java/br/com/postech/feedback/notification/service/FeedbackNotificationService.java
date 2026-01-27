@@ -36,7 +36,7 @@ public class FeedbackNotificationService {
     private final NotificationMetrics metrics;
     private final Validator validator;
 
-    @Value("${aws.ses.sender-email}")
+    @Value("${aws.ses.sender-email:matheusfreiredev@gmail.com}")
     private String senderEmail;
 
     @Value("${aws.ses.recipient-email}")
