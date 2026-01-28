@@ -8,6 +8,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 import java.nio.charset.StandardCharsets;
 
@@ -25,8 +26,17 @@ public class S3UploadService {
     private String region;
 
     public String uploadReport(String content, String s3Key, String contentType) {
+        // Validate bucket name is configured
+        if (bucketName == null || bucketName.isBlank()) {
+            log.error("=== S3 CONFIGURATION ERROR ===");
+            log.error("Bucket name not configured! Set S3_BUCKET_NAME environment variable.");
+            log.error("==============================");
+            throw new IllegalStateException("S3 bucket name not configured. Set S3_BUCKET_NAME environment variable.");
+        }
+
         log.info("Uploading report to S3 - Bucket: {}, Key: {}", bucketName, s3Key);
         log.info("Report content size: {} bytes", content.getBytes(StandardCharsets.UTF_8).length);
+        log.info("S3 Client configured - Region: {}", region);
 
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -35,6 +45,7 @@ public class S3UploadService {
                     .contentType(contentType)
                     .build();
 
+            log.info("Initiating S3 PutObject request...");
             PutObjectResponse response = s3Client.putObject(putObjectRequest,
                     RequestBody.fromBytes(content.getBytes(StandardCharsets.UTF_8)));
 
@@ -47,6 +58,13 @@ public class S3UploadService {
             log.info("=========================");
 
             return reportUrl;
+        } catch (SdkClientException e) {
+            log.error("=== S3 SDK CLIENT ERROR ===");
+            log.error("This usually indicates network/timeout issues");
+            log.error("Bucket: {}, Key: {}", bucketName, s3Key);
+            log.error("Error: {}", e.getMessage(), e);
+            log.error("===========================");
+            throw new RuntimeException("Failed to upload report to S3 - SDK client error", e);
         } catch (Exception e) {
             log.error("=== S3 UPLOAD FAILED ===");
             log.error("Bucket: {}, Key: {}", bucketName, s3Key);

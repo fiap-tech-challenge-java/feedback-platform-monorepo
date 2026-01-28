@@ -52,6 +52,13 @@
 			<version>2.21.0</version>
 		</dependency>
 
+		<!-- URL Connection HTTP Client - lighter for Lambda -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>url-connection-client</artifactId>
+			<version>2.21.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>

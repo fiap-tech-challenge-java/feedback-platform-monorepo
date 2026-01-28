@@ -7,11 +7,14 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sns.SnsClient;
 
 import java.net.URI;
+import java.time.Duration;
 
 /**
  * Configuração dos clientes AWS (S3 e SNS).
@@ -38,7 +41,16 @@ public class AwsConfig {
     public S3Client s3Client() {
         var builder = S3Client.builder()
                 .region(Region.of(region))
-                .credentialsProvider(credentialsProvider());
+                .credentialsProvider(credentialsProvider())
+                // Use UrlConnectionHttpClient for Lambda (lighter and faster startup)
+                .httpClient(UrlConnectionHttpClient.builder()
+                        .connectionTimeout(Duration.ofSeconds(10))
+                        .socketTimeout(Duration.ofSeconds(30))
+                        .build())
+                .overrideConfiguration(ClientOverrideConfiguration.builder()
+                        .apiCallTimeout(Duration.ofSeconds(60))
+                        .apiCallAttemptTimeout(Duration.ofSeconds(30))
+                        .build());
 
         if (isLocalStack()) {
             builder.endpointOverride(URI.create(endpoint))
@@ -52,7 +64,15 @@ public class AwsConfig {
     public SnsClient snsClient() {
         var builder = SnsClient.builder()
                 .region(Region.of(region))
-                .credentialsProvider(credentialsProvider());
+                .credentialsProvider(credentialsProvider())
+                .httpClient(UrlConnectionHttpClient.builder()
+                        .connectionTimeout(Duration.ofSeconds(10))
+                        .socketTimeout(Duration.ofSeconds(30))
+                        .build())
+                .overrideConfiguration(ClientOverrideConfiguration.builder()
+                        .apiCallTimeout(Duration.ofSeconds(30))
+                        .apiCallAttemptTimeout(Duration.ofSeconds(15))
+                        .build());
 
         if (isLocalStack()) {
             builder.endpointOverride(URI.create(endpoint));
