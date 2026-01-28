@@ -24,7 +24,7 @@ public class ReportGeneratorService {
 
     private final ObjectMapper objectMapper;
 
-    @Value("${reporting.format:json}")
+    @Value("${reporting.format:csv}")
     private String reportFormat;
 
     public String generateReport(ReportMetrics metrics, LocalDateTime generatedAt) {

@@ -51,7 +51,7 @@ aws:
 
 # Report Configuration
 reporting:
-  format: ${REPORT_FORMAT:json}
+  format: ${REPORT_FORMAT:csv}
 
 # Logging otimizado para Lambda
 logging:
