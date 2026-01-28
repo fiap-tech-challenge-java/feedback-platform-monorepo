@@ -1,29 +1,43 @@
 package br.com.postech.feedback.reporting.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.regions.Region;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class S3UploadService {
 
     private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
 
     @Value("${aws.s3.bucket-name:feedback-reports-990227772490}")
     private String bucketName;
 
     @Value("${aws.region:us-east-2}")
     private String region;
+
+    @Value("${aws.s3.presigned-url-expiration-days:7}")
+    private int presignedUrlExpirationDays;
+
+    public S3UploadService(S3Client s3Client) {
+        this.s3Client = s3Client;
+        // Presigner será criado sob demanda para usar a região correta
+        this.s3Presigner = null;
+    }
 
     public String uploadReport(String content, String s3Key, String contentType) {
         // Validate bucket name is configured
@@ -49,15 +63,16 @@ public class S3UploadService {
             PutObjectResponse response = s3Client.putObject(putObjectRequest,
                     RequestBody.fromBytes(content.getBytes(StandardCharsets.UTF_8)));
 
-            String reportUrl = generateS3Url(s3Key);
+            // Gera URL pré-assinada para acesso temporário
+            String presignedUrl = generatePresignedUrl(s3Key);
 
             log.info("=== S3 UPLOAD SUCCESS ===");
             log.info("ETag: {}", response.eTag());
             log.info("VersionId: {}", response.versionId());
-            log.info("Report URL: {}", reportUrl);
+            log.info("Presigned URL generated (valid for {} days)", presignedUrlExpirationDays);
             log.info("=========================");
 
-            return reportUrl;
+            return presignedUrl;
         } catch (SdkClientException e) {
             log.error("=== S3 SDK CLIENT ERROR ===");
             log.error("This usually indicates network/timeout issues");
@@ -74,7 +89,30 @@ public class S3UploadService {
         }
     }
 
-    private String generateS3Url(String s3Key) {
-        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3Key);
+    /**
+     * Gera uma URL pré-assinada (presigned URL) para download do relatório.
+     * Esta URL permite acesso temporário ao arquivo sem expor o bucket publicamente.
+     */
+    private String generatePresignedUrl(String s3Key) {
+        try (S3Presigner presigner = S3Presigner.builder()
+                .region(Region.of(region))
+                .build()) {
+
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3Key)
+                    .build();
+
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofDays(presignedUrlExpirationDays))
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
+            String presignedUrl = presignedRequest.url().toString();
+
+            log.info("Generated presigned URL for key: {}", s3Key);
+            return presignedUrl;
+        }
     }
 }

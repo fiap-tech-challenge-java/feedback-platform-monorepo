@@ -21,8 +21,7 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -87,7 +86,7 @@ class ReportingHandlerTest {
         verify(databaseQueryService, times(1)).fetchMetrics();
         verify(reportGeneratorService, times(1)).generateReport(any(), any());
         verify(s3UploadService, times(1)).uploadReport(anyString(), anyString(), anyString());
-        verify(snsPublishService, times(1)).publishReportReadyEvent(anyString(), any());
+        verify(snsPublishService, times(1)).publishReportReadyEvent(anyString(), anyString(), any(), anyLong(), anyDouble());
     }
 
     @Test
@@ -108,7 +107,7 @@ class ReportingHandlerTest {
 
         // Verify S3 and SNS were not called
         verify(s3UploadService, never()).uploadReport(anyString(), anyString(), anyString());
-        verify(snsPublishService, never()).publishReportReadyEvent(anyString(), any());
+        verify(snsPublishService, never()).publishReportReadyEvent(anyString(), anyString(), any(), anyLong(), anyDouble());
     }
 
     @Test
@@ -132,7 +131,7 @@ class ReportingHandlerTest {
                 .hasMessageContaining("Report generation failed");
 
         // Verify SNS was not called
-        verify(snsPublishService, never()).publishReportReadyEvent(anyString(), any());
+        verify(snsPublishService, never()).publishReportReadyEvent(anyString(), anyString(), any(), anyLong(), anyDouble());
     }
 
     @Test
@@ -146,7 +145,7 @@ class ReportingHandlerTest {
         when(s3UploadService.uploadReport(anyString(), anyString(), anyString()))
                 .thenReturn("https://bucket.s3.amazonaws.com/key");
         doThrow(new RuntimeException("SNS publish failed"))
-                .when(snsPublishService).publishReportReadyEvent(anyString(), any());
+                .when(snsPublishService).publishReportReadyEvent(anyString(), anyString(), any(), anyLong(), anyDouble());
 
         Map<String, Object> event = new HashMap<>();
 

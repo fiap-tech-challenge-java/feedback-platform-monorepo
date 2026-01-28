@@ -23,7 +23,11 @@ public class SnsPublishService {
     @Value("${aws.sns.topic-arn:arn:aws:sns:us-east-2:990227772490:feedback-notifications}")
     private String topicArn;
 
-    public void publishReportReadyEvent(String reportUrl, LocalDateTime generatedAt) {
+    @Value("${aws.s3.bucket-name:feedback-reports-990227772490}")
+    private String bucketName;
+
+    public void publishReportReadyEvent(String reportUrl, String s3Key, LocalDateTime generatedAt,
+                                         Long totalFeedbacks, Double averageScore) {
         log.info("Publishing ReportReady event to SNS - Topic: {}", topicArn);
 
         try {
@@ -31,6 +35,10 @@ public class SnsPublishService {
                     .eventType("ReportReady")
                     .message("Relatório semanal disponível")
                     .reportLink(reportUrl)
+                    .bucketName(bucketName)
+                    .s3Key(s3Key)
+                    .totalFeedbacks(totalFeedbacks)
+                    .averageScore(averageScore)
                     .generatedAt(generatedAt)
                     .build();
 

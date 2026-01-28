@@ -41,7 +41,13 @@ public class ReportingHandler {
                 String reportUrl = s3UploadService.uploadReport(reportContent, s3Key, contentType);
                 log.info("Report uploaded to S3: {}", reportUrl);
 
-                snsPublishService.publishReportReadyEvent(reportUrl, generatedAt);
+                snsPublishService.publishReportReadyEvent(
+                        reportUrl,
+                        s3Key,
+                        generatedAt,
+                        metrics.getTotalFeedbacks(),
+                        metrics.getAverageScore()
+                );
                 log.info("Report notification sent to SNS");
 
                 return Map.of(

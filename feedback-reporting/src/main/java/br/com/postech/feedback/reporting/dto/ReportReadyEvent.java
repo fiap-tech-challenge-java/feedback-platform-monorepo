@@ -17,6 +17,10 @@ public class ReportReadyEvent {
     private String eventType;
     private String message;
     private String reportLink;
+    private String bucketName;
+    private String s3Key;
+    private Long totalFeedbacks;
+    private Double averageScore;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime generatedAt;

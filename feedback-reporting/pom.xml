@@ -52,6 +52,13 @@
 			<version>2.21.0</version>
 		</dependency>
 
+		<!-- S3 Presigner para gerar URLs pré-assinadas -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3-transfer-manager</artifactId>
+			<version>2.21.0</version>
+		</dependency>
+
 		<!-- URL Connection HTTP Client - lighter for Lambda -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>

@@ -12,7 +12,10 @@ public record NotificationEmailDTO(
         Integer rating,
         StatusFeedback urgency,
         LocalDateTime sentDate,
-        String subject
+        String subject,
+        String reportLink,
+        Long totalFeedbacks,
+        Double averageScore
 ) {
     /**
      * Construtor de conveniência para criar um DTO de notificação crítica
@@ -30,7 +33,39 @@ public record NotificationEmailDTO(
                 rating,
                 urgency,
                 sentDate,
-                "ALERTA: Novo Feedback Crítico Recebido"
+                "ALERTA: Novo Feedback Crítico Recebido",
+                null,
+                null,
+                null
         );
+    }
+
+    /**
+     * Construtor de conveniência para criar um DTO de relatório semanal
+     */
+    public static NotificationEmailDTO fromWeeklyReport(
+            String reportLink,
+            Long totalFeedbacks,
+            Double averageScore,
+            LocalDateTime generatedAt
+    ) {
+        return new NotificationEmailDTO(
+                null,
+                null,
+                null,
+                null,
+                generatedAt,
+                "Relatório Semanal de Feedbacks Disponível",
+                reportLink,
+                totalFeedbacks,
+                averageScore
+        );
+    }
+
+    /**
+     * Verifica se é uma notificação de relatório
+     */
+    public boolean isReportNotification() {
+        return reportLink != null;
     }
 }
