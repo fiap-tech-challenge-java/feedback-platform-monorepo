@@ -34,8 +34,9 @@ public class Feedback {
     private LocalDateTime updatedAt;
 
     // Construtor Customizado para criar novos Feedbacks
-    // Aqui aplicamos a Regra de Negócio: Nota < 5 é Crítico
+    // Aqui aplicamos a Regra de Negócio: Rating entre 0-10 e Nota < 5 é Crítico
     public Feedback(String description, Integer rating) {
+        validarRating(rating);
         this.description = description;
         this.rating = rating;
         this.createdAt = LocalDateTime.now();
@@ -45,8 +46,14 @@ public class Feedback {
         this.status = calcularStatus(rating);
     }
 
+    private void validarRating(Integer rating) {
+        if (rating == null || rating < 0 || rating > 10) {
+            throw new IllegalArgumentException("Rating deve estar entre 0 e 10");
+        }
+    }
+
     private StatusFeedback calcularStatus(Integer rating) {
-        if (rating == null) return StatusFeedback.NORMAL;
+        // Rating já validado (0-10), calcula criticidade
         // Se nota for 0, 1, 2, 3 ou 4 -> CRITICO
         return (rating < 5) ? StatusFeedback.CRITICAL : StatusFeedback.NORMAL;
     }
