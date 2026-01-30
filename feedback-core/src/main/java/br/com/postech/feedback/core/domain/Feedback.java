@@ -4,7 +4,12 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
 import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "feedbacks")
@@ -21,6 +26,9 @@ public class Feedback {
     private String description;
 
     @Column(nullable = false)
+    @NotNull(message = "Rating é obrigatório")
+    @Min(value = 0, message = "Rating deve ser no mínimo 0")
+    @Max(value = 10, message = "Rating deve ser no máximo 10")
     private Integer rating;
 
     @Enumerated(EnumType.STRING)
