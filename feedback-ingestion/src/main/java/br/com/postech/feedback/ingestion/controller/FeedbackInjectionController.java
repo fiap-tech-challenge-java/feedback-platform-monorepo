@@ -5,6 +5,7 @@ import br.com.postech.feedback.ingestion.domain.FeedbackResponse;
 import br.com.postech.feedback.ingestion.domain.dto.FeedbackRequest;
 import br.com.postech.feedback.ingestion.domain.mapper.FeedbackInjectionApiMapper;
 import br.com.postech.feedback.ingestion.domain.service.FeedbackInjectionService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -28,7 +29,7 @@ public class FeedbackInjectionController {
     }
 
     @PostMapping
-    public ResponseEntity<FeedbackResponse> feedbackInjection(@RequestBody FeedbackRequest feedbackRequest) {
+    public ResponseEntity<FeedbackResponse> feedbackInjection(@Valid @RequestBody FeedbackRequest feedbackRequest) {
         long startTime = System.currentTimeMillis();
 
         logger.info("🚀 [HTTP] POST /rest/feedback - Requisição recebida");
