@@ -19,17 +19,17 @@ public class AwsConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(AwsConfig.class);
 
-    @Value("${aws.region:us-east-2}")
+    @Value("${aws.region}")
     private String region;
 
     // Se aws.endpoint não estiver definido, será uma String vazia, indicando ambiente Prod real
-    @Value("${aws.endpoint:}")
+    @Value("${aws.endpoint}")
     private String endpoint;
 
-    @Value("${aws.access-key:}")
+    @Value("${aws.access-key}")
     private String accessKey;
 
-    @Value("${aws.secret-key:}")
+    @Value("${aws.secret-key}")
     private String secretKey;
 
     @Bean

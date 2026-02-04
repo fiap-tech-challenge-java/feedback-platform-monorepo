@@ -24,7 +24,7 @@ public class FeedbackInjectionService {
     private final ObjectMapper objectMapper; // Para converter objeto em JSON string
 
     // Injeção da URL da fila definida no application.yaml
-    @Value("${app.sqs.queue-url:https://sqs.us-east-2.amazonaws.com/990227772490/feedback-analysis-queue}")
+    @Value("${app.sqs.queue-url}")
     private String queueUrl;
 
     public FeedbackInjectionService(FeedbackRepository feedbackRepository,

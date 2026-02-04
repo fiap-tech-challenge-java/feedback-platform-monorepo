@@ -16,25 +16,25 @@ public class DatabaseConfigurationLogger {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseConfigurationLogger.class);
 
-    @Value("${spring.datasource.url:}")
+    @Value("${spring.datasource.url}")
     private String datasourceUrl;
 
-    @Value("${spring.datasource.username:}")
+    @Value("${spring.datasource.username}")
     private String datasourceUsername;
 
-    @Value("${spring.datasource.password:}")
+    @Value("${spring.datasource.password}")
     private String datasourcePassword;
 
-    @Value("${spring.jpa.hibernate.ddl-auto:}")
+    @Value("${spring.jpa.hibernate.ddl-auto}")
     private String hibernateDdlAuto;
 
-    @Value("${spring.jpa.properties.hibernate.dialect:}")
+    @Value("${spring.jpa.properties.hibernate.dialect}")
     private String hibernateDialect;
 
-    @Value("${aws.region:}")
+    @Value("${aws.region}")
     private String awsRegion;
 
-    @Value("${aws.endpoint:}")
+    @Value("${aws.endpoint}")
     private String awsEndpoint;
 
     @EventListener

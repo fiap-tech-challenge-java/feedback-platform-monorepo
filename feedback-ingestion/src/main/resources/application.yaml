@@ -9,9 +9,9 @@ spring:
     web-application-type: none  # Lambda não precisa de web server
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/feedback_db}
-    username: ${SPRING_DATASOURCE_USERNAME:user_feedback}
-    password: ${SPRING_DATASOURCE_PASSWORD:password_feedback}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 2
@@ -31,15 +31,15 @@ spring:
 
 # AWS Configuration
 aws:
-  region: ${AWS_REGION:us-east-2}
+  region: ${AWS_REGION}
   endpoint: ${AWS_ENDPOINT:}
   sqs:
-    queue-name: ${SQS_QUEUE_NAME:feedback-analysis-queue}
+    queue-name: ${SQS_QUEUE_NAME}
 
 # Application specific
 app:
   sqs:
-    queue-url: ${SQS_QUEUE_URL:https://sqs.us-east-2.amazonaws.com/990227772490/feedback-analysis-queue}
+    queue-url: ${SQS_QUEUE_URL}
 
 # Logging otimizado para Lambda
 logging:
