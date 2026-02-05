@@ -60,13 +60,13 @@ class ReportingHandlerTest {
     void shouldExecuteCompleteWeeklyReportGenerationFlow() {
         // Arrange
         when(databaseQueryService.fetchMetrics()).thenReturn(mockMetrics);
-        when(reportGeneratorService.generateReport(any(ReportMetrics.class), any(LocalDateTime.class)))
-                .thenReturn("{\"type\":\"WEEKLY_REPORT\"}");
+        when(reportGeneratorService.generateReportAsBytes(any(ReportMetrics.class), any(LocalDateTime.class)))
+                .thenReturn("CSV content".getBytes());
         when(reportGeneratorService.generateS3Key(any(LocalDateTime.class)))
-                .thenReturn("reports/2026/01/report-2026-01-15.json");
-        when(reportGeneratorService.getContentType()).thenReturn("application/json");
-        when(s3UploadService.uploadReport(anyString(), anyString(), anyString()))
-                .thenReturn("https://bucket.s3.amazonaws.com/reports/2026/01/report-2026-01-15.json");
+                .thenReturn("reports/2026/01/relatorio-semanal-2026-01-15.csv");
+        when(reportGeneratorService.getContentType()).thenReturn("text/csv; charset=UTF-8");
+        when(s3UploadService.uploadReport(any(byte[].class), anyString(), anyString()))
+                .thenReturn("https://bucket.s3.amazonaws.com/reports/2026/01/relatorio-semanal-2026-01-15.csv");
 
         Map<String, Object> event = new HashMap<>();
         event.put("source", "aws.events");
@@ -84,8 +84,8 @@ class ReportingHandlerTest {
 
         // Verify all services were called in correct order
         verify(databaseQueryService, times(1)).fetchMetrics();
-        verify(reportGeneratorService, times(1)).generateReport(any(), any());
-        verify(s3UploadService, times(1)).uploadReport(anyString(), anyString(), anyString());
+        verify(reportGeneratorService, times(1)).generateReportAsBytes(any(), any());
+        verify(s3UploadService, times(1)).uploadReport(any(byte[].class), anyString(), anyString());
         verify(snsPublishService, times(1)).publishReportReadyEvent(anyString(), anyString(), any(), anyLong(), anyDouble());
     }
 
@@ -106,7 +106,7 @@ class ReportingHandlerTest {
                 .hasMessageContaining("Report generation failed");
 
         // Verify S3 and SNS were not called
-        verify(s3UploadService, never()).uploadReport(anyString(), anyString(), anyString());
+        verify(s3UploadService, never()).uploadReport(any(byte[].class), anyString(), anyString());
         verify(snsPublishService, never()).publishReportReadyEvent(anyString(), anyString(), any(), anyLong(), anyDouble());
     }
 
@@ -115,10 +115,10 @@ class ReportingHandlerTest {
     void shouldThrowExceptionWhenS3UploadFails() {
         // Arrange
         when(databaseQueryService.fetchMetrics()).thenReturn(mockMetrics);
-        when(reportGeneratorService.generateReport(any(), any())).thenReturn("{}");
+        when(reportGeneratorService.generateReportAsBytes(any(), any())).thenReturn("CSV".getBytes());
         when(reportGeneratorService.generateS3Key(any())).thenReturn("key");
-        when(reportGeneratorService.getContentType()).thenReturn("application/json");
-        when(s3UploadService.uploadReport(anyString(), anyString(), anyString()))
+        when(reportGeneratorService.getContentType()).thenReturn("text/csv; charset=UTF-8");
+        when(s3UploadService.uploadReport(any(byte[].class), anyString(), anyString()))
                 .thenThrow(new RuntimeException("S3 upload failed"));
 
         Map<String, Object> event = new HashMap<>();
@@ -139,10 +139,10 @@ class ReportingHandlerTest {
     void shouldThrowExceptionWhenSnsPublishFails() {
         // Arrange
         when(databaseQueryService.fetchMetrics()).thenReturn(mockMetrics);
-        when(reportGeneratorService.generateReport(any(), any())).thenReturn("{}");
+        when(reportGeneratorService.generateReportAsBytes(any(), any())).thenReturn("CSV".getBytes());
         when(reportGeneratorService.generateS3Key(any())).thenReturn("key");
-        when(reportGeneratorService.getContentType()).thenReturn("application/json");
-        when(s3UploadService.uploadReport(anyString(), anyString(), anyString()))
+        when(reportGeneratorService.getContentType()).thenReturn("text/csv; charset=UTF-8");
+        when(s3UploadService.uploadReport(any(byte[].class), anyString(), anyString()))
                 .thenReturn("https://bucket.s3.amazonaws.com/key");
         doThrow(new RuntimeException("SNS publish failed"))
                 .when(snsPublishService).publishReportReadyEvent(anyString(), anyString(), any(), anyLong(), anyDouble());
