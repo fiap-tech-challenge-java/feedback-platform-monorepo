@@ -20,7 +20,6 @@ public class SnsPublishService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    // Lê diretamente das variáveis de ambiente
     @Value("${SNS_TOPIC_ARN:}")
     private String topicArn;
 
@@ -50,7 +49,6 @@ public class SnsPublishService {
 
     public void publishReportReadyEvent(String reportUrl, String s3Key, LocalDateTime generatedAt,
                                          Long totalFeedbacks, Double averageScore) {
-        // Validar configuração antes de usar
         validateConfiguration();
         
         log.info("Publishing ReportReady event to SNS - Topic: {}", topicArn);

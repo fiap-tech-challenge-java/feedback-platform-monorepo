@@ -53,18 +53,14 @@ public class ReportGeneratorService {
         // BOM para UTF-8 (Excel reconhece acentos corretamente)
         csv.append("\uFEFF");
         
-        // ════════════════════════════════════════════════════════════════════════════
-        // CABEÇALHO DO RELATÓRIO
-        // ════════════════════════════════════════════════════════════════════════════
+
         csv.append("RELATÓRIO SEMANAL DE FEEDBACKS").append("\n");
         csv.append("Gerado em:").append(CSV_SEPARATOR)
            .append(generatedAt.format(DATE_TIME_FORMATTER)).append("\n");
         csv.append("Período:").append(CSV_SEPARATOR).append("Últimos 7 dias").append("\n");
         csv.append("\n");
         
-        // ════════════════════════════════════════════════════════════════════════════
-        // SEÇÃO 1: RESUMO EXECUTIVO
-        // ════════════════════════════════════════════════════════════════════════════
+
         csv.append("═══════════════════════════════════════════════════════════════════════════════").append("\n");
         csv.append("RESUMO EXECUTIVO").append("\n");
         csv.append("═══════════════════════════════════════════════════════════════════════════════").append("\n");
@@ -86,9 +82,7 @@ public class ReportGeneratorService {
            .append(getSatisfactionEmoji(avgScore)).append("\n");
         csv.append("\n");
 
-        // ════════════════════════════════════════════════════════════════════════════
-        // SEÇÃO 2: QUANTIDADE DE AVALIAÇÕES POR URGÊNCIA (Requisito Obrigatório)
-        // ════════════════════════════════════════════════════════════════════════════
+
         csv.append("═══════════════════════════════════════════════════════════════════════════════").append("\n");
         csv.append("QUANTIDADE DE AVALIAÇÕES POR URGÊNCIA").append("\n");
         csv.append("═══════════════════════════════════════════════════════════════════════════════").append("\n");
@@ -121,9 +115,7 @@ public class ReportGeneratorService {
         }
         csv.append("\n");
 
-        // ════════════════════════════════════════════════════════════════════════════
-        // SEÇÃO 3: QUANTIDADE DE AVALIAÇÕES POR DIA (Requisito Obrigatório)
-        // ════════════════════════════════════════════════════════════════════════════
+
         csv.append("═══════════════════════════════════════════════════════════════════════════════").append("\n");
         csv.append("QUANTIDADE DE AVALIAÇÕES POR DIA").append("\n");
         csv.append("═══════════════════════════════════════════════════════════════════════════════").append("\n");
@@ -147,9 +139,7 @@ public class ReportGeneratorService {
         }
         csv.append("\n");
 
-        // ════════════════════════════════════════════════════════════════════════════
-        // SEÇÃO 4: DETALHES DOS FEEDBACKS (Requisitos: Descrição, Urgência, Data de Envio)
-        // ════════════════════════════════════════════════════════════════════════════
+
         csv.append("═══════════════════════════════════════════════════════════════════════════════").append("\n");
         csv.append("DETALHES DOS FEEDBACKS").append("\n");
         csv.append("═══════════════════════════════════════════════════════════════════════════════").append("\n");

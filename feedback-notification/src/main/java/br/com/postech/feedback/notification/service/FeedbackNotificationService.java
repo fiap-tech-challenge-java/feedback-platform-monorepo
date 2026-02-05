@@ -37,7 +37,6 @@ public class FeedbackNotificationService {
     private final NotificationMetrics metrics;
     private final Validator validator;
 
-    // Lê diretamente das variáveis de ambiente
     @Value("${SES_FROM_EMAIL:}")
     private String senderEmail;
 
@@ -79,31 +78,25 @@ public class FeedbackNotificationService {
             log.info("Recebendo mensagem para processamento de notificação");
             log.debug("Payload recebido: {}", snsMessage);
 
-            // Validação básica: ignorar payloads vazios ou não-JSON
             if (snsMessage == null || snsMessage.trim().isEmpty()) {
                 log.warn("Payload vazio recebido. Ignorando...");
                 return NotificationResponseDTO.rejected("Payload vazio ou nulo");
             }
 
-            // Ignorar requisições GET ou payloads que claramente não são JSON
             if (!snsMessage.trim().startsWith("{") && !snsMessage.trim().startsWith("[")) {
                 log.warn("Payload não-JSON recebido: '{}'. Ignorando...", snsMessage);
                 return NotificationResponseDTO.rejected("Payload não é JSON válido");
             }
 
             try {
-                // Primeiro, extrai o corpo da mensagem
                 String messageBody = extractMessageBody(snsMessage);
 
-                // Verifica se é um evento de relatório pronto
                 if (isReportReadyEvent(messageBody)) {
                     return processReportReadyEvent(messageBody);
                 }
 
-                // Caso contrário, processa como feedback crítico
                 FeedbackEventDTO feedbackEvent = objectMapper.readValue(messageBody, FeedbackEventDTO.class);
 
-                // Validar o FeedbackEventDTO
                 var violations = validator.validate(feedbackEvent);
                 if (!violations.isEmpty()) {
                     String errorMsg = violations.stream()
@@ -120,7 +113,6 @@ public class FeedbackNotificationService {
                 log.info("Processando notificação para Feedback ID: {} com status: {}",
                         feedbackEvent.id(), feedbackEvent.status());
 
-                // Cria DTO de notificação
                 NotificationEmailDTO emailData = NotificationEmailDTO.fromCriticalFeedback(
                         feedbackEvent.id(),
                         feedbackEvent.description(),
@@ -129,7 +121,6 @@ public class FeedbackNotificationService {
                         LocalDateTime.now()
                 );
 
-                // Envia e-mail
                 boolean emailSent = sendEmail(emailData);
 
                 metrics.incrementMessagesProcessed();
@@ -158,7 +149,6 @@ public class FeedbackNotificationService {
     private String extractMessageBody(String message) throws Exception {
         JsonNode rootNode = objectMapper.readTree(message);
 
-        // Verifica se é formato SNS via Lambda (tem campo "Records")
         if (rootNode.has("Records")) {
             JsonNode records = rootNode.path("Records");
             if (records.isArray() && !records.isEmpty()) {
@@ -167,12 +157,10 @@ public class FeedbackNotificationService {
             }
         }
 
-        // Verifica se é uma mensagem SNS direta (tem campo "Message")
         if (rootNode.has("Message")) {
             return rootNode.path("Message").asText();
         }
 
-        // Assume que é o conteúdo direto
         return message;
     }
 
@@ -199,7 +187,6 @@ public class FeedbackNotificationService {
 
             metrics.incrementMessagesReceived();
 
-            // Cria DTO de notificação para o relatório
             NotificationEmailDTO emailData = NotificationEmailDTO.fromWeeklyReport(
                     reportEvent.reportLink(),
                     reportEvent.totalFeedbacks(),
@@ -207,7 +194,6 @@ public class FeedbackNotificationService {
                     reportEvent.generatedAt()
             );
 
-            // Envia e-mail
             boolean emailSent = sendEmail(emailData);
 
             metrics.incrementMessagesProcessed();
@@ -240,14 +226,11 @@ public class FeedbackNotificationService {
             return false;
         }
 
-        // Validar configuração antes de usar SES
         validateSesConfiguration();
 
         try {
-            // Gera o HTML do e-mail usando Thymeleaf
             String htmlBody = generateEmailHtml(emailData);
 
-            // Cria a mensagem de e-mail
             Message message = Message.builder()
                     .subject(Content.builder().data(emailData.subject()).build())
                     .body(Body.builder()
@@ -255,7 +238,6 @@ public class FeedbackNotificationService {
                             .build())
                     .build();
 
-            // Cria a requisição de envio
             SendEmailRequest emailRequest = SendEmailRequest.builder()
                     .source(senderEmail)
                     .destination(Destination.builder()
@@ -264,7 +246,6 @@ public class FeedbackNotificationService {
                     .message(message)
                     .build();
 
-            // Envia o e-mail
             SendEmailResponse response = sesClient.sendEmail(emailRequest);
 
             log.info("E-mail enviado com sucesso! MessageId: {} | Feedback ID: {} | Para: {}",
@@ -293,7 +274,6 @@ public class FeedbackNotificationService {
         Context context = new Context();
 
         if (emailData.isReportNotification()) {
-            // Template para relatório semanal
             context.setVariable("reportLink", emailData.reportLink());
             context.setVariable("totalFeedbacks", emailData.totalFeedbacks());
             context.setVariable("averageScore", String.format("%.2f", emailData.averageScore()));
@@ -302,7 +282,6 @@ public class FeedbackNotificationService {
             ));
             return templateEngine.process("weekly-report-email", context);
         } else {
-            // Template para feedback crítico
             context.setVariable("feedbackId", emailData.feedbackId());
             context.setVariable("description", emailData.description());
             context.setVariable("rating", emailData.rating());

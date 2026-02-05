@@ -22,7 +22,6 @@ public class AwsConfig {
     @Value("${aws.region:us-east-2}")
     private String region;
 
-    // Se aws.endpoint não estiver definido, será uma String vazia, indicando ambiente Prod real
     @Value("${aws.endpoint:}")
     private String endpoint;
 
@@ -54,7 +53,6 @@ public class AwsConfig {
             return StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(accessKey, secretKey));
         }
-        // Em Produção (Lambda), usa a Role associada à função automaticamente
         return DefaultCredentialsProvider.create();
     }
 

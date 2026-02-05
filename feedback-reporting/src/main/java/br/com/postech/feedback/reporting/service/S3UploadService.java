@@ -24,7 +24,6 @@ public class S3UploadService {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
 
-    // Lê diretamente da variável de ambiente
     @Value("${S3_BUCKET_NAME:}")
     private String bucketName;
 
@@ -36,7 +35,6 @@ public class S3UploadService {
 
     public S3UploadService(S3Client s3Client) {
         this.s3Client = s3Client;
-        // Presigner será criado sob demanda para usar a região correta
         this.s3Presigner = null;
     }
 
@@ -61,7 +59,6 @@ public class S3UploadService {
             PutObjectResponse response = s3Client.putObject(putObjectRequest,
                     RequestBody.fromBytes(content));
 
-            // Gera URL pré-assinada para acesso temporário
             String presignedUrl = generatePresignedUrl(s3Key);
 
             log.info("=== S3 UPLOAD SUCCESS ===");

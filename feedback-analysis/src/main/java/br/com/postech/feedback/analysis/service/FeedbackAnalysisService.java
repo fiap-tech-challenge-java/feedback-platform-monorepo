@@ -2,7 +2,7 @@ package br.com.postech.feedback.analysis.service;
 
 import br.com.postech.feedback.core.domain.StatusFeedback;
 import br.com.postech.feedback.core.dto.FeedbackEventDTO;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent; // Importante: Evento Nativo
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.awspring.cloud.sqs.annotation.SqsListener;
@@ -24,7 +24,6 @@ public class FeedbackAnalysisService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    // Lê diretamente da variável de ambiente SNS_TOPIC_ARN
     @Value("${SNS_TOPIC_ARN:}")
     private String topicArn;
 
@@ -54,16 +53,12 @@ public class FeedbackAnalysisService {
                 try {
                     log.info("📩 Processando mensagem ID: {}", record.getMessageId());
 
-                    // Converte o corpo JSON da mensagem SQS para o DTO Java
                     String body = record.getBody();
                     FeedbackEventDTO dto = objectMapper.readValue(body, FeedbackEventDTO.class);
-
-                    // Processa a lógica de negócio
                     processarFeedback(dto);
 
                 } catch (JsonProcessingException e) {
                     log.error("❌ Erro ao converter JSON da mensagem: {}", e.getMessage(), e);
-                    // Em produção, você poderia enviar para uma DLQ manual ou lançar erro para retry
                 } catch (Exception e) {
                     log.error("❌ Erro genérico ao processar mensagem: {}", e.getMessage(), e);
                     throw new RuntimeException("Erro no processamento da Lambda", e);
@@ -82,7 +77,6 @@ public class FeedbackAnalysisService {
         processarFeedback(event);
     }
 
-    // 🧠 Lógica Central (Agnóstica de Infraestrutura)
     private void processarFeedback(FeedbackEventDTO event) {
         log.info("🔍 Analisando feedback ID: {} | Status: {}", event.id(), event.status());
 
@@ -95,7 +89,6 @@ public class FeedbackAnalysisService {
     }
 
     private void sendToSns(FeedbackEventDTO event) {
-        // Validar configuração antes de enviar
         validateTopicArn();
         
         try {
