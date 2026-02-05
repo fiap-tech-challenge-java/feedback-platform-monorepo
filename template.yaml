@@ -34,7 +34,7 @@ Parameters:
 
   DatabaseUrl:
     Type: String
-    Description: JDBC URL for PostgreSQL database
+    Description: JDBC URL for PostgreSQL database (ex: jdbc:postgresql://host:5432/database)
     NoEcho: true
 
   DatabaseUsername:
@@ -47,10 +47,15 @@ Parameters:
     NoEcho: true
     Description: Database password
 
-  NotificationEmail:
+  SesFromEmail:
     Type: String
     Default: noreply@example.com
-    Description: Email for notifications (SES)
+    Description: Email remetente para notificações (deve estar verificado no SES)
+
+  SesRecipientEmail:
+    Type: String
+    Default: admin@example.com
+    Description: Email destinatário para notificações de feedback crítico
 
 # ==========================================
 # Recursos
@@ -180,11 +185,14 @@ Resources:
       Environment:
         Variables:
           SPRING_CLOUD_FUNCTION_DEFINITION: ingestFeedback
-          DATABASE_URL: !Ref DatabaseUrl
-          DATABASE_USER: !Ref DatabaseUsername
-          DATABASE_PASSWORD: !Ref DatabasePassword
+          # Database configuration - variáveis esperadas pelo application.yaml
+          SPRING_DATASOURCE_URL: !Ref DatabaseUrl
+          SPRING_DATASOURCE_USERNAME: !Ref DatabaseUsername
+          SPRING_DATASOURCE_PASSWORD: !Ref DatabasePassword
+          # AWS Configuration
+          AWS_REGION: !Ref AWS::Region
+          SQS_QUEUE_NAME: !GetAtt FeedbackQueue.QueueName
           SQS_QUEUE_URL: !Ref FeedbackQueue
-          AWS_SQS_ENDPOINT: !Sub "https://sqs.${AWS::Region}.amazonaws.com"
       Events:
         ApiPost:
           Type: Api
@@ -221,11 +229,10 @@ Resources:
       Environment:
         Variables:
           SPRING_CLOUD_FUNCTION_DEFINITION: analyzeFeedback
-          DATABASE_URL: !Ref DatabaseUrl
-          DATABASE_USER: !Ref DatabaseUsername
-          DATABASE_PASSWORD: !Ref DatabasePassword
+          # AWS Configuration - variáveis esperadas pelo application.yaml
+          AWS_REGION: !Ref AWS::Region
+          SQS_QUEUE_NAME: !GetAtt FeedbackQueue.QueueName
           SNS_TOPIC_ARN: !Ref NotificationTopic
-          AWS_SNS_ENDPOINT: !Sub "https://sns.${AWS::Region}.amazonaws.com"
       Events:
         SQSEvent:
           Type: SQS
@@ -250,11 +257,11 @@ Resources:
       Environment:
         Variables:
           SPRING_CLOUD_FUNCTION_DEFINITION: sendNotification
-          DATABASE_URL: !Ref DatabaseUrl
-          DATABASE_USER: !Ref DatabaseUsername
-          DATABASE_PASSWORD: !Ref DatabasePassword
-          SES_FROM_EMAIL: !Ref NotificationEmail
-          AWS_SES_ENDPOINT: !Sub "https://email.${AWS::Region}.amazonaws.com"
+          # AWS Configuration - variáveis esperadas pelo application.yaml
+          AWS_REGION: !Ref AWS::Region
+          SES_FROM_EMAIL: !Ref SesFromEmail
+          SES_RECIPIENT_EMAIL: !Ref SesRecipientEmail
+          AWS_SES_ENABLED: "true"
       Events:
         SNSEvent:
           Type: SNS
@@ -277,12 +284,15 @@ Resources:
       Environment:
         Variables:
           SPRING_CLOUD_FUNCTION_DEFINITION: generateReport
-          DATABASE_URL: !Ref DatabaseUrl
-          DATABASE_USER: !Ref DatabaseUsername
-          DATABASE_PASSWORD: !Ref DatabasePassword
+          # Database configuration - variáveis esperadas pelo application.yaml
+          SPRING_DATASOURCE_URL: !Ref DatabaseUrl
+          SPRING_DATASOURCE_USERNAME: !Ref DatabaseUsername
+          SPRING_DATASOURCE_PASSWORD: !Ref DatabasePassword
+          # AWS Configuration
+          AWS_REGION: !Ref AWS::Region
           S3_BUCKET_NAME: !Ref ReportsBucket
           SNS_TOPIC_ARN: !Ref NotificationTopic
-          AWS_S3_ENDPOINT: !Sub "https://s3.${AWS::Region}.amazonaws.com"
+          REPORT_FORMAT: csv
       Events:
         ScheduleWeekly:
           Type: Schedule

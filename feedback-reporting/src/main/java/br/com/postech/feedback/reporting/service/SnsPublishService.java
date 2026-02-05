@@ -20,10 +20,10 @@ public class SnsPublishService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${aws.sns.topic-arn:arn:aws:sns:us-east-2:990227772490:feedback-notifications}")
+    @Value("${aws.sns.topic-arn}")
     private String topicArn;
 
-    @Value("${aws.s3.bucket-name:feedback-reports-990227772490}")
+    @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
     public void publishReportReadyEvent(String reportUrl, String s3Key, LocalDateTime generatedAt,

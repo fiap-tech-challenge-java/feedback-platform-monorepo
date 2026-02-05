@@ -1,6 +1,11 @@
 # ===========================================
 # Configuração AWS Lambda - Feedback Notification
 # ===========================================
+# IMPORTANTE: Para usar em AWS Lambda, configure estas variáveis de ambiente:
+# - AWS_REGION: região AWS (ex: us-east-2)
+# - AWS_SES_ENDPOINT: deixar vazio em produção (apenas para LocalStack)
+# - SES_FROM_EMAIL: email remetente (deve estar verificado no SES)
+# - SES_RECIPIENT_EMAIL: email destinatário
 
 spring:
   application:
@@ -26,15 +31,15 @@ cloud:
     ses:
       endpoint: ${AWS_SES_ENDPOINT:https://email.us-east-2.amazonaws.com}
 
-# Application specific
+# Application specific - SES_FROM_EMAIL e SES_RECIPIENT_EMAIL são OBRIGATÓRIOS
 app:
   ses:
-    from-email: ${SES_FROM_EMAIL:feedbacktech@tuamaeaquelaursa.com}
+    from-email: ${SES_FROM_EMAIL}
 
 aws:
   ses:
-    sender-email: ${SES_FROM_EMAIL:feedbacktech@tuamaeaquelaursa.com}
-    recipient-email: ${SES_RECIPIENT_EMAIL:admin@feedbackplatform.com}
+    sender-email: ${SES_FROM_EMAIL}
+    recipient-email: ${SES_RECIPIENT_EMAIL}
     enabled: true
 
 # Logging otimizado para Lambda

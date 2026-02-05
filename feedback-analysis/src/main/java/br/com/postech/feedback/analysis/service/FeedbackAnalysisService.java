@@ -24,7 +24,7 @@ public class FeedbackAnalysisService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${app.sns.topic-arn:arn:aws:sns:us-east-2:990227772490:feedback-notifications}")
+    @Value("${app.sns.topic-arn}")
     private String topicArn;
 
     /**
