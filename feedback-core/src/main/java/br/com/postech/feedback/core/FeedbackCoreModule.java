@@ -11,7 +11,6 @@ package br.com.postech.feedback.core;
 public final class FeedbackCoreModule {
 
     private FeedbackCoreModule() {
-        // Classe utilitária - não instanciar
     }
 
     public static final String BASE_PACKAGE = "br.com.postech.feedback.core";

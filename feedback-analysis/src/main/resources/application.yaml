@@ -26,12 +26,13 @@ cloud:
     sns:
       endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-2.amazonaws.com}
 
-# Application specific
+# Application specific - SNS_TOPIC_ARN é OBRIGATÓRIO em produção
+# Se não configurado, a aplicação falhará ao tentar publicar notificações
 app:
   sqs:
     queue-name: ${SQS_QUEUE_NAME:feedback-analysis-queue}
   sns:
-    topic-arn: ${SNS_TOPIC_ARN:arn:aws:sns:us-east-2:990227772490:feedback-notifications}
+    topic-arn: ${SNS_TOPIC_ARN:}
 
 # Logging otimizado para Lambda
 logging:

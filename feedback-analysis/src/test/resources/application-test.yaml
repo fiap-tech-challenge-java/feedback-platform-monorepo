@@ -4,11 +4,11 @@ spring:
   cloud:
     aws:
       region:
-        static: us-east-2
+        static: ${AWS_REGION:us-east-2}
       credentials:
-        access-key: test
-        secret-key: test
-      endpoint: http://localhost:4566
+        access-key: ${AWS_ACCESS_KEY:test}
+        secret-key: ${AWS_SECRET_KEY:test}
+      endpoint: ${AWS_ENDPOINT:http://localhost:4566}
 
 # Desabilita o listener SQS durante os testes unitários
 cloud:
@@ -17,9 +17,9 @@ cloud:
       listener:
         auto-startup: false
 
-aws:
+# Configurações de teste - SNS_TOPIC_ARN é obrigatório
+app:
   sqs:
-    queue-name: feedback-analysis-queue
+    queue-name: ${SQS_QUEUE_NAME:feedback-analysis-queue}
   sns:
-    topic:
-      arn: arn:aws:sns:us-east-2:000000000000:feedback-notification-topic
+    topic-arn: ${SNS_TOPIC_ARN:arn:aws:sns:us-east-2:000000000000:feedback-notification-topic}

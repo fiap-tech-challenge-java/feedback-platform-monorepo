@@ -20,14 +20,37 @@ public class SnsPublishService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${aws.sns.topic-arn:arn:aws:sns:us-east-2:990227772490:feedback-notifications}")
+    @Value("${SNS_TOPIC_ARN:}")
     private String topicArn;
 
-    @Value("${aws.s3.bucket-name:feedback-reports-990227772490}")
+    @Value("${S3_BUCKET_NAME:}")
     private String bucketName;
+
+    /**
+     * Valida a configuração do SNS no momento do uso.
+     * Lança exceção com mensagem clara se as variáveis não estiverem configuradas.
+     */
+    private void validateConfiguration() {
+        if (topicArn == null || topicArn.isBlank()) {
+            log.error("=== SNS CONFIGURATION ERROR ===");
+            log.error("SNS Topic ARN not configured!");
+            log.error("Set SNS_TOPIC_ARN environment variable in AWS Lambda.");
+            log.error("================================");
+            throw new IllegalStateException("SNS Topic ARN not configured. Set SNS_TOPIC_ARN environment variable.");
+        }
+        if (bucketName == null || bucketName.isBlank()) {
+            log.error("=== S3 CONFIGURATION ERROR ===");
+            log.error("S3 Bucket name not configured!");
+            log.error("Set S3_BUCKET_NAME environment variable in AWS Lambda.");
+            log.error("================================");
+            throw new IllegalStateException("S3 Bucket name not configured. Set S3_BUCKET_NAME environment variable.");
+        }
+    }
 
     public void publishReportReadyEvent(String reportUrl, String s3Key, LocalDateTime generatedAt,
                                          Long totalFeedbacks, Double averageScore) {
+        validateConfiguration();
+        
         log.info("Publishing ReportReady event to SNS - Topic: {}", topicArn);
 
         try {

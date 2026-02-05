@@ -2,7 +2,7 @@ package br.com.postech.feedback.analysis.service;
 
 import br.com.postech.feedback.core.domain.StatusFeedback;
 import br.com.postech.feedback.core.dto.FeedbackEventDTO;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent; // Importante: Evento Nativo
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.awspring.cloud.sqs.annotation.SqsListener;
@@ -24,8 +24,20 @@ public class FeedbackAnalysisService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${app.sns.topic-arn:arn:aws:sns:us-east-2:990227772490:feedback-notifications}")
+    @Value("${SNS_TOPIC_ARN:}")
     private String topicArn;
+
+    private void validateTopicArn() {
+        if (topicArn == null || topicArn.isBlank()) {
+            log.error("❌ [CONFIG ERROR] SNS_TOPIC_ARN não está configurada!");
+            log.error("Configure a variável de ambiente SNS_TOPIC_ARN com o ARN completo do tópico SNS");
+            log.error("Exemplo: arn:aws:sns:us-east-2:123456789012:feedback-notifications");
+            throw new IllegalStateException(
+                "SNS_TOPIC_ARN environment variable is not configured. " +
+                "Please set it to the full SNS topic ARN (e.g., arn:aws:sns:us-east-2:ACCOUNT_ID/TOPIC_NAME)"
+            );
+        }
+    }
 
     /**
      * ✅ MODO 1: AWS LAMBDA (Produção)
@@ -41,16 +53,12 @@ public class FeedbackAnalysisService {
                 try {
                     log.info("📩 Processando mensagem ID: {}", record.getMessageId());
 
-                    // Converte o corpo JSON da mensagem SQS para o DTO Java
                     String body = record.getBody();
                     FeedbackEventDTO dto = objectMapper.readValue(body, FeedbackEventDTO.class);
-
-                    // Processa a lógica de negócio
                     processarFeedback(dto);
 
                 } catch (JsonProcessingException e) {
                     log.error("❌ Erro ao converter JSON da mensagem: {}", e.getMessage(), e);
-                    // Em produção, você poderia enviar para uma DLQ manual ou lançar erro para retry
                 } catch (Exception e) {
                     log.error("❌ Erro genérico ao processar mensagem: {}", e.getMessage(), e);
                     throw new RuntimeException("Erro no processamento da Lambda", e);
@@ -69,7 +77,6 @@ public class FeedbackAnalysisService {
         processarFeedback(event);
     }
 
-    // 🧠 Lógica Central (Agnóstica de Infraestrutura)
     private void processarFeedback(FeedbackEventDTO event) {
         log.info("🔍 Analisando feedback ID: {} | Status: {}", event.id(), event.status());
 
@@ -82,10 +89,8 @@ public class FeedbackAnalysisService {
     }
 
     private void sendToSns(FeedbackEventDTO event) {
-        if (topicArn == null || topicArn.isBlank()) {
-            log.error("⚠️ ARN do SNS não configurado! Verifique a variável 'app.sns.topic-arn'.");
-            return;
-        }
+        validateTopicArn();
+        
         try {
             String messageBody = objectMapper.writeValueAsString(event);
             PublishRequest request = PublishRequest.builder()

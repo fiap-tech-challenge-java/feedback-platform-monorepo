@@ -34,7 +34,7 @@ public class ReportingHandler {
             try {
                 ReportMetrics metrics = databaseQueryService.fetchMetrics();
 
-                String reportContent = reportGeneratorService.generateReport(metrics, generatedAt);
+                byte[] reportContent = reportGeneratorService.generateReportAsBytes(metrics, generatedAt);
                 String s3Key = reportGeneratorService.generateS3Key(generatedAt);
                 String contentType = reportGeneratorService.getContentType();
 

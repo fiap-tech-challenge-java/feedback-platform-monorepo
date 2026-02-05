@@ -13,8 +13,8 @@ import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "feedbacks")
-@Data // Gera Getters, Setters, toString, equals, hashCode
-@NoArgsConstructor // Obrigatório para o JPA
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class Feedback {
 
@@ -41,16 +41,12 @@ public class Feedback {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Construtor Customizado para criar novos Feedbacks
-    // Aqui aplicamos a Regra de Negócio: Rating entre 0-10 e Nota < 5 é Crítico
     public Feedback(String description, Integer rating) {
         validarRating(rating);
         this.description = description;
         this.rating = rating;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-
-        // Regra de Negócio: Calcula automaticamente a urgência
         this.status = calcularStatus(rating);
     }
 
@@ -61,12 +57,9 @@ public class Feedback {
     }
 
     private StatusFeedback calcularStatus(Integer rating) {
-        // Rating já validado (0-10), calcula criticidade
-        // Se nota for 0, 1, 2, 3 ou 4 -> CRITICO
         return (rating < 5) ? StatusFeedback.CRITICAL : StatusFeedback.NORMAL;
     }
 
-    // Método para atualizar antes de salvar (Audit)
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();

@@ -11,14 +11,12 @@ import org.springframework.context.annotation.Primary;
 public class JsonConfig {
 
     @Bean
-    @Primary // Este será o ObjectMapper padrão para todas as Lambdas
+    @Primary
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        // Suporte para datas do Java 8+ (LocalDateTime)
         mapper.registerModule(new JavaTimeModule());
-        // Escrever datas como Strings ISO-8601 e não timestamps numéricos
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.enable(SerializationFeature.INDENT_OUTPUT); // Adicionando formatação bonita do JSON
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
         return mapper;
     }
 

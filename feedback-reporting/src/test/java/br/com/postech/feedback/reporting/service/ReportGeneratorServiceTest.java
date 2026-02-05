@@ -2,14 +2,11 @@ package br.com.postech.feedback.reporting.service;
 
 import br.com.postech.feedback.reporting.dto.FeedbackDetail;
 import br.com.postech.feedback.reporting.dto.ReportMetrics;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,14 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ReportGeneratorServiceTest {
 
     private ReportGeneratorService reportGeneratorService;
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        reportGeneratorService = new ReportGeneratorService(objectMapper);
+        reportGeneratorService = new ReportGeneratorService();
     }
 
     private ReportMetrics createTestMetrics() {
@@ -45,17 +38,17 @@ class ReportGeneratorServiceTest {
         feedbacks.add(FeedbackDetail.builder()
                 .description("Ótima aula!")
                 .urgency("LOW")
-                .createdAt("2026-01-10T10:30:00Z")
+                .createdAt("2026-01-10T10:30:00")
                 .build());
         feedbacks.add(FeedbackDetail.builder()
                 .description("Precisa melhorar")
                 .urgency("HIGH")
-                .createdAt("2026-01-11T14:00:00Z")
+                .createdAt("2026-01-11T14:00:00")
                 .build());
 
         return ReportMetrics.builder()
                 .totalFeedbacks(19L)
-                .averageScore(7.5)
+                .averageScore(4.5)
                 .feedbacksByDay(feedbacksByDay)
                 .feedbacksByUrgency(feedbacksByUrgency)
                 .feedbacks(feedbacks)
@@ -63,97 +56,175 @@ class ReportGeneratorServiceTest {
     }
 
     @Test
-    @DisplayName("Deve gerar relatório em formato JSON com estrutura do Tech Challenge")
-    void shouldGenerateJsonReportWithCorrectStructure() {
+    @DisplayName("Deve gerar relatório CSV com estrutura correta")
+    void shouldGenerateCsvReportWithCorrectStructure() {
         // Arrange
-        ReflectionTestUtils.setField(reportGeneratorService, "reportFormat", "json");
         ReportMetrics metrics = createTestMetrics();
         LocalDateTime generatedAt = LocalDateTime.of(2026, 1, 15, 10, 30, 0);
 
         // Act
-        String result = reportGeneratorService.generateReport(metrics, generatedAt);
+        byte[] result = reportGeneratorService.generateReportAsBytes(metrics, generatedAt);
+        String csvContent = new String(result, StandardCharsets.UTF_8);
 
         // Assert
-        assertThat(result).contains("\"type\" : \"WEEKLY_REPORT\"");
-        assertThat(result).contains("\"period\" : \"weekly\"");
-        assertThat(result).contains("\"summary\"");
-        assertThat(result).contains("\"totalFeedbacks\" : 19");
-        assertThat(result).contains("\"averageScore\" : 7.5");
-        assertThat(result).contains("\"feedbacksByDay\"");
-        assertThat(result).contains("\"feedbacksByUrgency\"");
-        assertThat(result).contains("\"feedbacks\"");
-        assertThat(result).contains("\"description\"");
-        assertThat(result).contains("\"urgency\"");
+        assertThat(csvContent).contains("RELATÓRIO SEMANAL DE FEEDBACKS");
+        assertThat(csvContent).contains("RESUMO EXECUTIVO");
+        assertThat(csvContent).contains("QUANTIDADE DE AVALIAÇÕES POR URGÊNCIA");
+        assertThat(csvContent).contains("QUANTIDADE DE AVALIAÇÕES POR DIA");
+        assertThat(csvContent).contains("DETALHES DOS FEEDBACKS");
+        assertThat(csvContent).contains("FIM DO RELATÓRIO");
     }
 
     @Test
-    @DisplayName("Deve gerar relatório em formato CSV")
-    void shouldGenerateCsvReport() {
+    @DisplayName("Deve incluir dados de métricas no CSV")
+    void shouldIncludeMetricsDataInCsv() {
         // Arrange
-        ReflectionTestUtils.setField(reportGeneratorService, "reportFormat", "csv");
         ReportMetrics metrics = createTestMetrics();
         LocalDateTime generatedAt = LocalDateTime.of(2026, 1, 15, 10, 30, 0);
 
         // Act
-        String result = reportGeneratorService.generateReport(metrics, generatedAt);
+        byte[] result = reportGeneratorService.generateReportAsBytes(metrics, generatedAt);
+        String csvContent = new String(result, StandardCharsets.UTF_8);
 
-        // Assert
-        assertThat(result).contains("metric,value");
-        assertThat(result).contains("totalFeedbacks,19");
-        assertThat(result).contains("averageScore,7.5");
+        // Assert - Verificar resumo
+        assertThat(csvContent).contains("Total de Feedbacks");
+        assertThat(csvContent).contains("19");
+        assertThat(csvContent).contains("Nota Média");
+        assertThat(csvContent).contains("4.50");
+        assertThat(csvContent).contains("EXCELENTE");
     }
 
     @Test
-    @DisplayName("Deve gerar chave S3 correta para JSON")
-    void shouldGenerateCorrectS3KeyForJson() {
+    @DisplayName("Deve incluir avaliações por urgência no CSV")
+    void shouldIncludeUrgencyDataInCsv() {
         // Arrange
-        ReflectionTestUtils.setField(reportGeneratorService, "reportFormat", "json");
+        ReportMetrics metrics = createTestMetrics();
         LocalDateTime generatedAt = LocalDateTime.of(2026, 1, 15, 10, 30, 0);
 
         // Act
-        String s3Key = reportGeneratorService.generateS3Key(generatedAt);
+        byte[] result = reportGeneratorService.generateReportAsBytes(metrics, generatedAt);
+        String csvContent = new String(result, StandardCharsets.UTF_8);
 
         // Assert
-        assertThat(s3Key).isEqualTo("reports/2026/01/report-2026-01-15.json");
+        assertThat(csvContent).contains("LOW");
+        assertThat(csvContent).contains("MEDIUM");
+        assertThat(csvContent).contains("HIGH");
+    }
+
+    @Test
+    @DisplayName("Deve incluir avaliações por dia no CSV")
+    void shouldIncludeDailyDataInCsv() {
+        // Arrange
+        ReportMetrics metrics = createTestMetrics();
+        LocalDateTime generatedAt = LocalDateTime.of(2026, 1, 15, 10, 30, 0);
+
+        // Act
+        byte[] result = reportGeneratorService.generateReportAsBytes(metrics, generatedAt);
+        String csvContent = new String(result, StandardCharsets.UTF_8);
+
+        // Assert
+        assertThat(csvContent).contains("10/01/2026");
+        assertThat(csvContent).contains("11/01/2026");
+    }
+
+    @Test
+    @DisplayName("Deve incluir detalhes dos feedbacks no CSV")
+    void shouldIncludeFeedbackDetailsInCsv() {
+        // Arrange
+        ReportMetrics metrics = createTestMetrics();
+        LocalDateTime generatedAt = LocalDateTime.of(2026, 1, 15, 10, 30, 0);
+
+        // Act
+        byte[] result = reportGeneratorService.generateReportAsBytes(metrics, generatedAt);
+        String csvContent = new String(result, StandardCharsets.UTF_8);
+
+        // Assert
+        assertThat(csvContent).contains("Ótima aula!");
+        assertThat(csvContent).contains("Precisa melhorar");
     }
 
     @Test
     @DisplayName("Deve gerar chave S3 correta para CSV")
-    void shouldGenerateCorrectS3KeyForCsv() {
+    void shouldGenerateCorrectS3Key() {
         // Arrange
-        ReflectionTestUtils.setField(reportGeneratorService, "reportFormat", "csv");
         LocalDateTime generatedAt = LocalDateTime.of(2026, 1, 15, 10, 30, 0);
 
         // Act
         String s3Key = reportGeneratorService.generateS3Key(generatedAt);
 
         // Assert
-        assertThat(s3Key).isEqualTo("reports/2026/01/report-2026-01-15.csv");
-    }
-
-    @Test
-    @DisplayName("Deve retornar content-type correto para JSON")
-    void shouldReturnCorrectContentTypeForJson() {
-        // Arrange
-        ReflectionTestUtils.setField(reportGeneratorService, "reportFormat", "json");
-
-        // Act
-        String contentType = reportGeneratorService.getContentType();
-
-        // Assert
-        assertThat(contentType).isEqualTo("application/json");
+        assertThat(s3Key).isEqualTo("reports/2026/01/relatorio-semanal-2026-01-15.csv");
     }
 
     @Test
     @DisplayName("Deve retornar content-type correto para CSV")
-    void shouldReturnCorrectContentTypeForCsv() {
-        // Arrange
-        ReflectionTestUtils.setField(reportGeneratorService, "reportFormat", "csv");
-
+    void shouldReturnCorrectContentType() {
         // Act
         String contentType = reportGeneratorService.getContentType();
 
         // Assert
-        assertThat(contentType).isEqualTo("text/csv");
+        assertThat(contentType).isEqualTo("text/csv; charset=UTF-8");
+    }
+
+    @Test
+    @DisplayName("Deve retornar extensão correta")
+    void shouldReturnCorrectFileExtension() {
+        // Act
+        String extension = reportGeneratorService.getFileExtension();
+
+        // Assert
+        assertThat(extension).isEqualTo("csv");
+    }
+
+    @Test
+    @DisplayName("Deve usar separador ponto-e-vírgula para Excel brasileiro")
+    void shouldUseSemicolonSeparatorForBrazilianExcel() {
+        // Arrange
+        ReportMetrics metrics = createTestMetrics();
+        LocalDateTime generatedAt = LocalDateTime.of(2026, 1, 15, 10, 30, 0);
+
+        // Act
+        byte[] result = reportGeneratorService.generateReportAsBytes(metrics, generatedAt);
+        String csvContent = new String(result, StandardCharsets.UTF_8);
+
+        // Assert - CSV usa ; como separador
+        assertThat(csvContent).contains(";");
+    }
+
+    @Test
+    @DisplayName("Deve incluir BOM UTF-8 para Excel reconhecer acentos")
+    void shouldIncludeUtf8Bom() {
+        // Arrange
+        ReportMetrics metrics = createTestMetrics();
+        LocalDateTime generatedAt = LocalDateTime.of(2026, 1, 15, 10, 30, 0);
+
+        // Act
+        byte[] result = reportGeneratorService.generateReportAsBytes(metrics, generatedAt);
+        String csvContent = new String(result, StandardCharsets.UTF_8);
+
+        // Assert - BOM UTF-8 está no início
+        assertThat(csvContent).startsWith("\uFEFF");
+    }
+
+    @Test
+    @DisplayName("Deve tratar métricas nulas graciosamente")
+    void shouldHandleNullMetricsGracefully() {
+        // Arrange
+        ReportMetrics metrics = ReportMetrics.builder()
+                .totalFeedbacks(null)
+                .averageScore(null)
+                .feedbacksByDay(null)
+                .feedbacksByUrgency(null)
+                .feedbacks(null)
+                .build();
+        LocalDateTime generatedAt = LocalDateTime.of(2026, 1, 15, 10, 30, 0);
+
+        // Act
+        byte[] result = reportGeneratorService.generateReportAsBytes(metrics, generatedAt);
+        String csvContent = new String(result, StandardCharsets.UTF_8);
+
+        // Assert - Deve gerar relatório sem erros
+        assertThat(csvContent).contains("RELATÓRIO SEMANAL DE FEEDBACKS");
+        assertThat(csvContent).contains("Nenhum dado");
     }
 }

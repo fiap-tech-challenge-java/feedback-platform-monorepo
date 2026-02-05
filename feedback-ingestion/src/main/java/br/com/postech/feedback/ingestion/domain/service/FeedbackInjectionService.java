@@ -20,11 +20,10 @@ public class FeedbackInjectionService {
     private static final Logger logger = LoggerFactory.getLogger(FeedbackInjectionService.class);
 
     private final FeedbackRepository feedbackRepository;
-    private final SqsClient sqsClient; // Cliente nativo configurado no AwsConfig
-    private final ObjectMapper objectMapper; // Para converter objeto em JSON string
+    private final SqsClient sqsClient;
+    private final ObjectMapper objectMapper;
 
-    // Injeção da URL da fila definida no application.yaml
-    @Value("${app.sqs.queue-url:https://sqs.us-east-2.amazonaws.com/990227772490/feedback-analysis-queue}")
+    @Value("${SQS_QUEUE_URL:}")
     private String queueUrl;
 
     public FeedbackInjectionService(FeedbackRepository feedbackRepository,
@@ -35,22 +34,33 @@ public class FeedbackInjectionService {
         this.objectMapper = objectMapper;
     }
 
+    private void validateConfiguration() {
+        if (queueUrl == null || queueUrl.isBlank()) {
+            logger.error("❌ [CONFIG ERROR] SQS_QUEUE_URL não está configurada!");
+            logger.error("Configure a variável de ambiente SQS_QUEUE_URL com a URL completa da fila SQS");
+            logger.error("Exemplo: https://sqs.us-east-2.amazonaws.com/123456789012/feedback-analysis-queue");
+            throw new IllegalStateException(
+                "SQS_QUEUE_URL environment variable is not configured. " +
+                "Please set it to the full SQS queue URL (e.g., https://sqs.us-east-2.amazonaws.com/ACCOUNT_ID/QUEUE_NAME)"
+            );
+        }
+    }
+
     public Feedback processFeedback(CreateFeedback createFeedback) {
+        validateConfiguration();
+        
         logger.info("📝 [INGESTION] Feedback recebido - description: '{}', rating: {}",
                 createFeedback.description(), createFeedback.rating());
 
-        // 1. Converter DTO para Entidade
         Feedback feedback = new Feedback(
                 createFeedback.description(),
                 createFeedback.rating()
         );
 
-        // 2. Salvar no Banco (PostgreSQL)
         logger.info("💾 [DATABASE] Iniciando salvamento no PostgreSQL...");
         feedbackRepository.save(feedback);
         logger.info("✅ [DATABASE] Feedback salvo! ID: {}", feedback.getId());
 
-        // 3. Enviar para SQS
         try {
             logger.info("📤 [SQS] Preparando envio para URL: '{}'", queueUrl);
 
@@ -74,8 +84,6 @@ public class FeedbackInjectionService {
 
         } catch (Exception e) {
             logger.error("❌ [SQS] FALHA FATAL ao comunicar com AWS: {}", e.getMessage(), e);
-            // Em arquitetura serverless orientada a eventos, se falhar o envio da mensagem,
-            // geralmente queremos que a Lambda falhe para o DLQ capturar ou ocorrer retry.
             throw new RuntimeException("Erro ao enviar mensagem para o SQS", e);
         }
     }

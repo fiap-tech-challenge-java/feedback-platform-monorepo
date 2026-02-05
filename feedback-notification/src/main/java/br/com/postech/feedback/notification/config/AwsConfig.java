@@ -16,8 +16,6 @@ public class AwsConfig {
     @Value("${spring.cloud.aws.region.static:us-east-2}")
     private String region;
 
-    // Se essa variável estiver preenchida (no YAML), usamos ela (LocalStack).
-    // Se estiver vazia (na AWS), usamos o comportamento padrão.
     @Value("${spring.cloud.aws.endpoint:}")
     private String endpointUrl;
 
