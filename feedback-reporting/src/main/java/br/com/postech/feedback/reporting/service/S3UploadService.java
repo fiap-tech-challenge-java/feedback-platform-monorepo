@@ -40,17 +40,14 @@ public class S3UploadService {
         this.s3Presigner = null;
     }
 
-    public String uploadReport(String content, String s3Key, String contentType) {
-        // Validate bucket name is configured
-        if (bucketName == null || bucketName.isBlank()) {
-            log.error("=== S3 CONFIGURATION ERROR ===");
-            log.error("Bucket name not configured! Set S3_BUCKET_NAME environment variable.");
-            log.error("==============================");
-            throw new IllegalStateException("S3 bucket name not configured. Set S3_BUCKET_NAME environment variable.");
-        }
+    /**
+     * Upload de conteúdo em bytes (para Excel/binários)
+     */
+    public String uploadReport(byte[] content, String s3Key, String contentType) {
+        validateBucketConfiguration();
 
         log.info("Uploading report to S3 - Bucket: {}, Key: {}", bucketName, s3Key);
-        log.info("Report content size: {} bytes", content.getBytes(StandardCharsets.UTF_8).length);
+        log.info("Report content size: {} bytes", content.length);
         log.info("S3 Client configured - Region: {}", region);
 
         try {
@@ -62,7 +59,7 @@ public class S3UploadService {
 
             log.info("Initiating S3 PutObject request...");
             PutObjectResponse response = s3Client.putObject(putObjectRequest,
-                    RequestBody.fromBytes(content.getBytes(StandardCharsets.UTF_8)));
+                    RequestBody.fromBytes(content));
 
             // Gera URL pré-assinada para acesso temporário
             String presignedUrl = generatePresignedUrl(s3Key);
@@ -87,6 +84,22 @@ public class S3UploadService {
             log.error("Error: {}", e.getMessage(), e);
             log.error("========================");
             throw new RuntimeException("Failed to upload report to S3", e);
+        }
+    }
+
+    /**
+     * Upload de conteúdo em String (para CSV/JSON)
+     */
+    public String uploadReport(String content, String s3Key, String contentType) {
+        return uploadReport(content.getBytes(StandardCharsets.UTF_8), s3Key, contentType);
+    }
+
+    private void validateBucketConfiguration() {
+        if (bucketName == null || bucketName.isBlank()) {
+            log.error("=== S3 CONFIGURATION ERROR ===");
+            log.error("Bucket name not configured! Set S3_BUCKET_NAME environment variable.");
+            log.error("==============================");
+            throw new IllegalStateException("S3 bucket name not configured. Set S3_BUCKET_NAME environment variable.");
         }
     }
 
