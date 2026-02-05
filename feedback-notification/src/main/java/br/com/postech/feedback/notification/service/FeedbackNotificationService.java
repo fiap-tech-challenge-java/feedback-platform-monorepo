@@ -37,14 +37,35 @@ public class FeedbackNotificationService {
     private final NotificationMetrics metrics;
     private final Validator validator;
 
-    @Value("${aws.ses.sender-email}")
+    @Value("${aws.ses.sender-email:}")
     private String senderEmail;
 
-    @Value("${aws.ses.recipient-email}")
+    @Value("${aws.ses.recipient-email:}")
     private String recipientEmail;
 
     @Value("${aws.ses.enabled:true}")
     private boolean sesEnabled;
+
+    /**
+     * Valida a configuração do SES no momento do uso.
+     * Lança exceção com mensagem clara se as variáveis não estiverem configuradas.
+     */
+    private void validateSesConfiguration() {
+        if (senderEmail == null || senderEmail.isBlank()) {
+            log.error("=== SES CONFIGURATION ERROR ===");
+            log.error("SES sender email not configured!");
+            log.error("Set SES_FROM_EMAIL environment variable in AWS Lambda.");
+            log.error("================================");
+            throw new IllegalStateException("SES sender email not configured. Set SES_FROM_EMAIL environment variable.");
+        }
+        if (recipientEmail == null || recipientEmail.isBlank()) {
+            log.error("=== SES CONFIGURATION ERROR ===");
+            log.error("SES recipient email not configured!");
+            log.error("Set SES_RECIPIENT_EMAIL environment variable in AWS Lambda.");
+            log.error("================================");
+            throw new IllegalStateException("SES recipient email not configured. Set SES_RECIPIENT_EMAIL environment variable.");
+        }
+    }
 
     /**
      * Bean que define a função serverless para consumir mensagens do SNS
@@ -217,6 +238,9 @@ public class FeedbackNotificationService {
             log.warn("SES está desabilitado. E-mail não será enviado. Dados: {}", emailData);
             return false;
         }
+
+        // Validar configuração antes de usar SES
+        validateSesConfiguration();
 
         try {
             // Gera o HTML do e-mail usando Thymeleaf

@@ -24,8 +24,20 @@ public class FeedbackAnalysisService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${app.sns.topic-arn}")
+    @Value("${app.sns.topic-arn:}")
     private String topicArn;
+
+    private void validateTopicArn() {
+        if (topicArn == null || topicArn.isBlank()) {
+            log.error("❌ [CONFIG ERROR] SNS_TOPIC_ARN não está configurada!");
+            log.error("Configure a variável de ambiente SNS_TOPIC_ARN com o ARN completo do tópico SNS");
+            log.error("Exemplo: arn:aws:sns:us-east-2:123456789012:feedback-notifications");
+            throw new IllegalStateException(
+                "SNS_TOPIC_ARN environment variable is not configured. " +
+                "Please set it to the full SNS topic ARN (e.g., arn:aws:sns:us-east-2:ACCOUNT_ID/TOPIC_NAME)"
+            );
+        }
+    }
 
     /**
      * ✅ MODO 1: AWS LAMBDA (Produção)
@@ -82,10 +94,9 @@ public class FeedbackAnalysisService {
     }
 
     private void sendToSns(FeedbackEventDTO event) {
-        if (topicArn == null || topicArn.isBlank()) {
-            log.error("⚠️ ARN do SNS não configurado! Verifique a variável 'app.sns.topic-arn'.");
-            return;
-        }
+        // Validar configuração antes de enviar
+        validateTopicArn();
+        
         try {
             String messageBody = objectMapper.writeValueAsString(event);
             PublishRequest request = PublishRequest.builder()

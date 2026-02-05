@@ -25,7 +25,7 @@ public class FeedbackInjectionService {
 
     // Injeção da URL da fila definida no application.yaml ou variável de ambiente SQS_QUEUE_URL
     // OBRIGATÓRIO em produção: Defina a variável SQS_QUEUE_URL com a URL completa da fila
-    @Value("${app.sqs.queue-url}")
+    @Value("${app.sqs.queue-url:}")
     private String queueUrl;
 
     public FeedbackInjectionService(FeedbackRepository feedbackRepository,
@@ -36,7 +36,22 @@ public class FeedbackInjectionService {
         this.objectMapper = objectMapper;
     }
 
+    private void validateConfiguration() {
+        if (queueUrl == null || queueUrl.isBlank()) {
+            logger.error("❌ [CONFIG ERROR] SQS_QUEUE_URL não está configurada!");
+            logger.error("Configure a variável de ambiente SQS_QUEUE_URL com a URL completa da fila SQS");
+            logger.error("Exemplo: https://sqs.us-east-2.amazonaws.com/123456789012/feedback-analysis-queue");
+            throw new IllegalStateException(
+                "SQS_QUEUE_URL environment variable is not configured. " +
+                "Please set it to the full SQS queue URL (e.g., https://sqs.us-east-2.amazonaws.com/ACCOUNT_ID/QUEUE_NAME)"
+            );
+        }
+    }
+
     public Feedback processFeedback(CreateFeedback createFeedback) {
+        // Validar configuração antes de processar
+        validateConfiguration();
+        
         logger.info("📝 [INGESTION] Feedback recebido - description: '{}', rating: {}",
                 createFeedback.description(), createFeedback.rating());
 

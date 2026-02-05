@@ -51,12 +51,13 @@ cloud:
       endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-2.amazonaws.com}
 
 # Application specific - S3_BUCKET_NAME e SNS_TOPIC_ARN são OBRIGATÓRIOS em produção
+# Se não configurados, a aplicação falhará ao tentar gerar relatórios
 aws:
   region: ${AWS_REGION:us-east-2}
   s3:
-    bucket-name: ${S3_BUCKET_NAME}
+    bucket-name: ${S3_BUCKET_NAME:}
   sns:
-    topic-arn: ${SNS_TOPIC_ARN}
+    topic-arn: ${SNS_TOPIC_ARN:}
 
 # Report Configuration
 reporting:

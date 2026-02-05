@@ -45,9 +45,10 @@ aws:
     queue-name: ${SQS_QUEUE_NAME:feedback-analysis-queue}
 
 # Application specific - SQS_QUEUE_URL é OBRIGATÓRIO em produção
+# Se não configurado, a aplicação falhará ao tentar enviar mensagens
 app:
   sqs:
-    queue-url: ${SQS_QUEUE_URL}
+    queue-url: ${SQS_QUEUE_URL:}
 
 # Logging otimizado para Lambda
 logging:

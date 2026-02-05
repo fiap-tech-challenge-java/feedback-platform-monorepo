@@ -32,15 +32,16 @@ cloud:
       endpoint: ${AWS_SES_ENDPOINT:https://email.us-east-2.amazonaws.com}
 
 # Application specific - SES_FROM_EMAIL e SES_RECIPIENT_EMAIL são OBRIGATÓRIOS
+# Se não configurados, a aplicação falhará ao tentar enviar emails
 app:
   ses:
-    from-email: ${SES_FROM_EMAIL}
+    from-email: ${SES_FROM_EMAIL:}
 
 aws:
   ses:
-    sender-email: ${SES_FROM_EMAIL}
-    recipient-email: ${SES_RECIPIENT_EMAIL}
-    enabled: true
+    sender-email: ${SES_FROM_EMAIL:}
+    recipient-email: ${SES_RECIPIENT_EMAIL:}
+    enabled: ${AWS_SES_ENABLED:true}
 
 # Logging otimizado para Lambda
 logging:
