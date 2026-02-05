@@ -23,9 +23,9 @@ public class FeedbackInjectionService {
     private final SqsClient sqsClient; // Cliente nativo configurado no AwsConfig
     private final ObjectMapper objectMapper; // Para converter objeto em JSON string
 
-    // Injeção da URL da fila definida no application.yaml ou variável de ambiente SQS_QUEUE_URL
+    // Injeção da URL da fila - lê diretamente da variável de ambiente SQS_QUEUE_URL
     // OBRIGATÓRIO em produção: Defina a variável SQS_QUEUE_URL com a URL completa da fila
-    @Value("${app.sqs.queue-url:}")
+    @Value("${SQS_QUEUE_URL:}")
     private String queueUrl;
 
     public FeedbackInjectionService(FeedbackRepository feedbackRepository,

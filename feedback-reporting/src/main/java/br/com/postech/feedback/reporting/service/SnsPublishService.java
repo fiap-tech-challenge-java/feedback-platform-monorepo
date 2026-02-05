@@ -20,10 +20,11 @@ public class SnsPublishService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${aws.sns.topic-arn:}")
+    // Lê diretamente das variáveis de ambiente
+    @Value("${SNS_TOPIC_ARN:}")
     private String topicArn;
 
-    @Value("${aws.s3.bucket-name:}")
+    @Value("${S3_BUCKET_NAME:}")
     private String bucketName;
 
     /**

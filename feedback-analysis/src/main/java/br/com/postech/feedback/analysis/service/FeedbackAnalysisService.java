@@ -24,7 +24,8 @@ public class FeedbackAnalysisService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${app.sns.topic-arn:}")
+    // Lê diretamente da variável de ambiente SNS_TOPIC_ARN
+    @Value("${SNS_TOPIC_ARN:}")
     private String topicArn;
 
     private void validateTopicArn() {

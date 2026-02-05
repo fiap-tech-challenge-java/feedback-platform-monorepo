@@ -24,7 +24,8 @@ public class S3UploadService {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
 
-    @Value("${aws.s3.bucket-name:}")
+    // Lê diretamente da variável de ambiente
+    @Value("${S3_BUCKET_NAME:}")
     private String bucketName;
 
     @Value("${aws.region:us-east-2}")

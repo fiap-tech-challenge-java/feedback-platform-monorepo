@@ -37,10 +37,11 @@ public class FeedbackNotificationService {
     private final NotificationMetrics metrics;
     private final Validator validator;
 
-    @Value("${aws.ses.sender-email:}")
+    // Lê diretamente das variáveis de ambiente
+    @Value("${SES_FROM_EMAIL:}")
     private String senderEmail;
 
-    @Value("${aws.ses.recipient-email:}")
+    @Value("${SES_RECIPIENT_EMAIL:}")
     private String recipientEmail;
 
     @Value("${aws.ses.enabled:true}")
