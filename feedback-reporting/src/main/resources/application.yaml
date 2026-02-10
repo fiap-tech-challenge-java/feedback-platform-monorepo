@@ -22,9 +22,9 @@ spring:
       definition: generateReport
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/feedbackdb}
-    username: ${SPRING_DATASOURCE_USERNAME:admin}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 2
@@ -44,16 +44,16 @@ spring:
 cloud:
   aws:
     region:
-      static: ${AWS_REGION:us-east-2}
+      static: ${AWS_REGION:}
     s3:
-      endpoint: ${AWS_S3_ENDPOINT:https://s3.us-east-2.amazonaws.com}
+      endpoint: ${AWS_S3_ENDPOINT:}
     sns:
-      endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-2.amazonaws.com}
+      endpoint: ${AWS_SNS_ENDPOINT:}
 
 # Application specific - S3_BUCKET_NAME e SNS_TOPIC_ARN são OBRIGATÓRIOS em produção
 # Se não configurados, a aplicação falhará ao tentar gerar relatórios
 aws:
-  region: ${AWS_REGION:us-east-2}
+  region: ${AWS_REGION:}
   s3:
     bucket-name: ${S3_BUCKET_NAME:}
   sns:

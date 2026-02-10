@@ -27,7 +27,7 @@ public class S3UploadService {
     @Value("${S3_BUCKET_NAME:}")
     private String bucketName;
 
-    @Value("${aws.region:us-east-2}")
+    @Value("${aws.region:}")
     private String region;
 
     @Value("${aws.s3.presigned-url-expiration-days:7}")

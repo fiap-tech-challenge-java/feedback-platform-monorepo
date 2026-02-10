@@ -19,7 +19,7 @@ public class AwsConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(AwsConfig.class);
 
-    @Value("${aws.region:us-east-2}")
+    @Value("${aws.region:}")
     private String region;
 
     @Value("${aws.endpoint:}")

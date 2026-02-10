@@ -27,9 +27,9 @@ spring:
 cloud:
   aws:
     region:
-      static: ${AWS_REGION:us-east-2}
+      static: ${AWS_REGION:}
     ses:
-      endpoint: ${AWS_SES_ENDPOINT:https://email.us-east-2.amazonaws.com}
+      endpoint: ${AWS_SES_ENDPOINT:}
 
 # Application specific - SES_FROM_EMAIL e SES_RECIPIENT_EMAIL são OBRIGATÓRIOS
 # Se não configurados, a aplicação falhará ao tentar enviar emails

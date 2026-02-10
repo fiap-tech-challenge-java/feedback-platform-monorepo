@@ -25,7 +25,7 @@ import java.time.Duration;
 @Configuration
 public class AwsConfig {
 
-    @Value("${aws.region:us-east-2}")
+    @Value("${aws.region:}")
     private String region;
 
     @Value("${aws.endpoint:#{null}}")
