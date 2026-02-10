@@ -54,7 +54,6 @@ public class AwsConfig {
 
         SqsClient client = builder.build();
 
-        // Criar a fila ANTES do @SqsListener tentar se conectar
         if (endpointUrl != null && !endpointUrl.isBlank()) {
             createQueueIfNotExists(client);
         }
