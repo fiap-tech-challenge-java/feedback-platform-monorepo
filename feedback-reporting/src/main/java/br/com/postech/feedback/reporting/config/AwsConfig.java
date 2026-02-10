@@ -16,12 +16,6 @@ import software.amazon.awssdk.services.sns.SnsClient;
 import java.net.URI;
 import java.time.Duration;
 
-/**
- * Configuração dos clientes AWS (S3 e SNS).
- *
- * No LocalStack: usa endpoint local com credenciais fake.
- * Na AWS: usa credenciais padrão (IAM Role, env vars, etc).
- */
 @Configuration
 public class AwsConfig {
 
@@ -42,7 +36,6 @@ public class AwsConfig {
         var builder = S3Client.builder()
                 .region(Region.of(region))
                 .credentialsProvider(credentialsProvider())
-                // Use UrlConnectionHttpClient for Lambda (lighter and faster startup)
                 .httpClient(UrlConnectionHttpClient.builder()
                         .connectionTimeout(Duration.ofSeconds(10))
                         .socketTimeout(Duration.ofSeconds(30))

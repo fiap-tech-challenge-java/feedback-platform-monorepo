@@ -7,10 +7,6 @@ import org.springframework.boot.context.event.ApplicationContextInitializedEvent
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-/**
- * Listener que loga as variáveis de ambiente críticas para Lambda.
- * Ajuda a debugar problemas de configuração.
- */
 @Component
 public class DatabaseConfigurationLogger {
 

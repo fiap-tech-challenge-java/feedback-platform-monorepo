@@ -1,20 +1,8 @@
-# ===========================================
-# Configuração AWS Lambda - Feedback Ingestion
-# ===========================================
-# IMPORTANTE: Para usar em AWS Lambda, configure estas variáveis de ambiente:
-# - SPRING_DATASOURCE_URL: jdbc:postgresql://host:5432/database
-# - SPRING_DATASOURCE_USERNAME: usuário do banco
-# - SPRING_DATASOURCE_PASSWORD: senha do banco
-# - AWS_REGION: região AWS (ex: us-east-2)
-# - AWS_ENDPOINT: deixar vazio em produção (apenas para LocalStack)
-# - SQS_QUEUE_NAME: nome da fila (ex: feedback-analysis-queue)
-# - SQS_QUEUE_URL: URL completa da fila SQS
-
 spring:
   application:
     name: feedback-ingestion
   main:
-    web-application-type: none  # Lambda não precisa de web server
+    web-application-type: none
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:}
@@ -37,20 +25,16 @@ spring:
         format_sql: false
     open-in-view: false
 
-# AWS Configuration
 aws:
   region: ${AWS_REGION:}
   endpoint: ${AWS_ENDPOINT:}
   sqs:
     queue-name: ${SQS_QUEUE_NAME:}
 
-# Application specific - SQS_QUEUE_URL é OBRIGATÓRIO em produção
-# Se não configurado, a aplicação falhará ao tentar enviar mensagens
 app:
   sqs:
     queue-url: ${SQS_QUEUE_URL:}
 
-# Logging otimizado para Lambda
 logging:
   level:
     root: INFO

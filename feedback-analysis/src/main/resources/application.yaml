@@ -1,12 +1,8 @@
-# ===========================================
-# Configuração AWS Lambda - Feedback Analysis
-# ===========================================
-
 spring:
   application:
     name: feedback-analysis
   main:
-    web-application-type: none  # Lambda não precisa de web server
+    web-application-type: none
 
   cloud:
     function:
@@ -18,7 +14,6 @@ spring:
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
 
-# AWS Configuration (Infraestrutura Spring Cloud)
 cloud:
   aws:
     region:
@@ -26,15 +21,12 @@ cloud:
     sns:
       endpoint: ${AWS_SNS_ENDPOINT:}
 
-# Application specific - SNS_TOPIC_ARN é OBRIGATÓRIO em produção
-# Se não configurado, a aplicação falhará ao tentar publicar notificações
 app:
   sqs:
     queue-name: ${SQS_QUEUE_NAME:}
   sns:
     topic-arn: ${SNS_TOPIC_ARN:}
 
-# Logging otimizado para Lambda
 logging:
   level:
     root: INFO

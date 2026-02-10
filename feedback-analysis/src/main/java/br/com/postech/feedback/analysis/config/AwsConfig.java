@@ -62,10 +62,6 @@ public class AwsConfig {
         return client;
     }
 
-    /**
-     * Bean SqsAsyncClient usado pelo Spring Cloud AWS SQS Listener.
-     * A fila é criada de forma síncrona antes de retornar o client.
-     */
     @Bean
     public SqsAsyncClient sqsAsyncClient(SqsClient sqsClient) {
         var builder = SqsAsyncClient.builder()

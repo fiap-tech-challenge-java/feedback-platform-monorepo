@@ -26,11 +26,6 @@ public class FeedbackIngestionApplication {
 		SpringApplication.run(FeedbackIngestionApplication.class, args);
 	}
 
-	/**
-	 * Bean de função para AWS Lambda.
-	 * O FunctionInvoker do Spring Cloud Function procura por um Bean do tipo Function.
-	 * Nome do bean = nome da função configurada em SPRING_CLOUD_FUNCTION_DEFINITION
-	 */
 	@Bean
 	public Function<FeedbackRequest, FeedbackResponse> ingestFeedback(FeedbackInjectionService feedbackInjectionService) {
 		return feedbackRequest -> {

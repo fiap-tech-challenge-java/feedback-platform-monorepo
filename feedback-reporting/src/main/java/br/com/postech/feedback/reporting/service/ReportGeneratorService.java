@@ -10,10 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-/**
- * Serviço responsável por gerar relatórios semanais em formato CSV.
- * O CSV é formatado para ser apresentável no Excel com separador ; (padrão brasileiro).
- */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -23,9 +19,6 @@ public class ReportGeneratorService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    /**
-     * Gera o relatório CSV como bytes para upload no S3.
-     */
     public byte[] generateReportAsBytes(ReportMetrics metrics, LocalDateTime generatedAt) {
         log.info("Generating CSV report...");
         try {
@@ -37,20 +30,9 @@ public class ReportGeneratorService {
         }
     }
 
-    /**
-     * Gera o relatório CSV formatado e apresentável.
-     * 
-     * Requisitos obrigatórios atendidos:
-     * - Descrição
-     * - Urgência  
-     * - Data de envio
-     * - Quantidade de avaliações por dia
-     * - Quantidade de avaliações por urgência
-     */
     private String generateCsvReport(ReportMetrics metrics, LocalDateTime generatedAt) {
         StringBuilder csv = new StringBuilder();
         
-        // BOM para UTF-8 (Excel reconhece acentos corretamente)
         csv.append("\uFEFF");
         
 

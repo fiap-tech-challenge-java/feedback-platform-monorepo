@@ -38,9 +38,6 @@ public class S3UploadService {
         this.s3Presigner = null;
     }
 
-    /**
-     * Upload de conteúdo em bytes (para Excel/binários)
-     */
     public String uploadReport(byte[] content, String s3Key, String contentType) {
         validateBucketConfiguration();
 
@@ -84,9 +81,6 @@ public class S3UploadService {
         }
     }
 
-    /**
-     * Upload de conteúdo em String (para CSV/JSON)
-     */
     public String uploadReport(String content, String s3Key, String contentType) {
         return uploadReport(content.getBytes(StandardCharsets.UTF_8), s3Key, contentType);
     }
@@ -100,10 +94,6 @@ public class S3UploadService {
         }
     }
 
-    /**
-     * Gera uma URL pré-assinada (presigned URL) para download do relatório.
-     * Esta URL permite acesso temporário ao arquivo sem expor o bucket publicamente.
-     */
     private String generatePresignedUrl(String s3Key) {
         try (S3Presigner presigner = S3Presigner.builder()
                 .region(Region.of(region))
