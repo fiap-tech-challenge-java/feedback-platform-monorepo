@@ -1,5 +1,5 @@
 services:
-  # Banco de Dados PostgreSQL
+  # --- INFRAESTRUTURA LOCAL ---
   postgres:
     image: postgres:15-alpine
     container_name: feedback-db
@@ -11,24 +11,121 @@ services:
       - "5439:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - feedback-network
 
-  # LocalStack (Simula AWS)
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:latest
     container_name: feedback-aws
     ports:
-      - "4566:4566"            # Gateway
-      - "4510-4559:4510-4559"  # Portas de serviços
+      - "4566:4566"
     environment:
-      - DEBUG=1
-      - SERVICES=sqs,sns,s3
+      - SERVICES=sqs,sns,s3,ses
       - AWS_DEFAULT_REGION=us-east-2
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - HOSTNAME_EXTERNAL=localhost
+      - DEBUG=1
     volumes:
       - "./localstack_data:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - feedback-network
+
+  # --- MICROSSERVIÇOS (BUILD LOCAL) ---
+  feedback-ingestion:
+    build:
+      context: ./feedback-ingestion
+      dockerfile: Dockerfile
+    container_name: feedback-ingestion
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/feedback_db
+      - SPRING_DATASOURCE_USERNAME=user_feedback
+      - SPRING_DATASOURCE_PASSWORD=password_feedback
+      - AWS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - AWS_REGION=us-east-2
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - SQS_QUEUE_NAME=feedback-queue
+    depends_on:
+      - postgres
+      - localstack
+    networks:
+      - feedback-network
+
+  feedback-analysis:
+    build:
+      context: ./feedback-analysis
+      dockerfile: Dockerfile
+    container_name: feedback-analysis
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - AWS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - AWS_REGION=us-east-2
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      - localstack
+    networks:
+      - feedback-network
+
+  feedback-notification:
+    build:
+      context: ./feedback-notification
+      dockerfile: Dockerfile
+    container_name: feedback-notification
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - AWS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - AWS_REGION=us-east-2
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      - localstack
+    networks:
+      - feedback-network
+
+  feedback-reporting:
+    build:
+      context: ./feedback-reporting
+      dockerfile: Dockerfile
+    container_name: feedback-reporting
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/feedback_db
+      - SPRING_DATASOURCE_USERNAME=user_feedback
+      - SPRING_DATASOURCE_PASSWORD=password_feedback
+      - AWS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - S3_BUCKET_NAME=feedback-reports-990227772490
+    depends_on:
+      - postgres
+      - localstack
+    networks:
+      - feedback-network
+
+  # --- PROXY REVERSO ---
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - feedback-ingestion
+      - feedback-analysis
+    networks:
+      - feedback-network
+
+networks:
+  feedback-network:
+    driver: bridge
 
 volumes:
   postgres_data:

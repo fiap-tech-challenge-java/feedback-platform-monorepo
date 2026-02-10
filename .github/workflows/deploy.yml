@@ -1,13 +1,19 @@
-name: Deploy to AWS Lambda
+name: Deploy to AWS Lambda (S3 Artifacts)
+
 on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
-  deploy:
+  # Fase 1: Integração Contínua (Build e Testes)
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
       - name: Set up JDK 21
         uses: actions/setup-java@v3
@@ -16,20 +22,51 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build with Maven
+      - name: Run Unit Tests
+        # Executa todos os testes unitários do monorepo
+        run: mvn test
+
+      - name: Build Fat JARs
+        # Se os testes passarem, gera os artefatos finais
         run: mvn clean package -DskipTests
+
+      # Upload temporário para passar os JARs para o próximo JOB
+      - name: Upload Artifacts for Deployment
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-packages
+          path: "**/target/*-aws.jar"
+
+  # Fase 2: Entrega Contínua (Deploy na AWS)
+  deploy:
+    needs: build-and-test # O deploy só inicia se o job anterior (testes) der sucesso
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Download Artifacts from Build
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-packages
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      # Deploy da Ingestão
-      - name: Deploy Ingestion
+      - name: Upload Artifacts to S3
         run: |
-          aws lambda update-function-code --function-name nome-da-sua-lambda-ingestao \
-          --zip-file fileb://feedback-ingestion/target/feedback-ingestion-1.0.0-SNAPSHOT-aws.jar
+          aws s3 cp feedback-ingestion/target/feedback-ingestion-1.0.0-SNAPSHOT-aws.jar s3://${{ secrets.S3_BUCKET }}/artifacts/feedback-ingestion.jar
+          aws s3 cp feedback-analysis/target/feedback-analysis-1.0.0-SNAPSHOT-aws.jar s3://${{ secrets.S3_BUCKET }}/artifacts/feedback-analysis.jar
+          aws s3 cp feedback-notification/target/feedback-notification-1.0.0-SNAPSHOT-aws.jar s3://${{ secrets.S3_BUCKET }}/artifacts/feedback-notification.jar
+          aws s3 cp feedback-reporting/target/feedback-reporting-1.0.0-SNAPSHOT-aws.jar s3://${{ secrets.S3_BUCKET }}/artifacts/feedback-reporting.jar
 
-      # (Repita o passo "Deploy" acima para as outras 3 lambdas mudando o nome e o arquivo)
+      - name: Update Lambda Functions
+        run: |
+          aws lambda update-function-code --function-name feedback-ingestion --s3-bucket ${{ secrets.S3_BUCKET }} --s3-key artifacts/feedback-ingestion.jar
+          aws lambda update-function-code --function-name feedback-analysis --s3-bucket ${{ secrets.S3_BUCKET }} --s3-key artifacts/feedback-analysis.jar
+          aws lambda update-function-code --function-name feedback-notification --s3-bucket ${{ secrets.S3_BUCKET }} --s3-key artifacts/feedback-notification.jar
+          aws lambda update-function-code --function-name feedback-reporting --s3-bucket ${{ secrets.S3_BUCKET }} --s3-key artifacts/feedback-reporting.jar
