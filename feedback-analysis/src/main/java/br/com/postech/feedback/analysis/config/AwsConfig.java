@@ -21,11 +21,17 @@ public class AwsConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(AwsConfig.class);
 
-    @Value("${spring.cloud.aws.region.static:us-east-2}")
+    @Value("${spring.cloud.aws.region.static:}")
     private String region;
 
     @Value("${spring.cloud.aws.endpoint:}")
     private String endpointUrl;
+
+    @Value("${aws.access-key:}")
+    private String accessKey;
+
+    @Value("${aws.secret-key:}")
+    private String secretKey;
 
     @Bean
     public SnsClient snsClient() {
@@ -35,7 +41,7 @@ public class AwsConfig {
         if (endpointUrl != null && !endpointUrl.isBlank()) {
             builder.endpointOverride(URI.create(endpointUrl))
                     .credentialsProvider(StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create("test", "test")));
+                            AwsBasicCredentials.create(accessKey, secretKey)));
         }
 
         return builder.build();
@@ -49,7 +55,7 @@ public class AwsConfig {
         if (endpointUrl != null && !endpointUrl.isBlank()) {
             builder.endpointOverride(URI.create(endpointUrl))
                     .credentialsProvider(StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create("test", "test")));
+                            AwsBasicCredentials.create(accessKey, secretKey)));
         }
 
         SqsClient client = builder.build();
@@ -69,7 +75,7 @@ public class AwsConfig {
         if (endpointUrl != null && !endpointUrl.isBlank()) {
             builder.endpointOverride(URI.create(endpointUrl))
                     .credentialsProvider(StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create("test", "test")));
+                            AwsBasicCredentials.create(accessKey, secretKey)));
         }
 
         return builder.build();
