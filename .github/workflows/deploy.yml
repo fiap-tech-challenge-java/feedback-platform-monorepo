@@ -13,40 +13,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Atualizado para v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4 # Atualizado para v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
 
       - name: Run Unit Tests
-        # Executa todos os testes unitários do monorepo
         run: mvn test
 
       - name: Build Fat JARs
-        # Se os testes passarem, gera os artefatos finais
         run: mvn clean package -DskipTests
 
-      # Upload temporário para passar os JARs para o próximo JOB
+      # Correção: v3 para v4
       - name: Upload Artifacts for Deployment
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lambda-packages
           path: "**/target/*-aws.jar"
+          if-no-files-found: error # Garante que o pipeline pare se os JARs não existirem
 
   # Fase 2: Entrega Contínua (Deploy na AWS)
   deploy:
-    needs: build-and-test # O deploy só inicia se o job anterior (testes) der sucesso
+    needs: build-and-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # Correção: v3 para v4
       - name: Download Artifacts from Build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: lambda-packages
 
