@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatorio Semanal de Feedbacks</title>
+</head>
+<body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
+    <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1)">
+        <div style="background:#28a745;color:#fff;padding:20px;text-align:center;border-radius:8px 8px 0 0">
+            <h1 style="margin:0;font-size:24px">Relatorio Semanal de Feedbacks</h1>
+        </div>
+        <div style="padding:30px">
+            <div style="background:#d4edda;border-left:4px solid #28a745;padding:15px;margin-bottom:20px">
+                <strong>Seu relatorio esta pronto!</strong> O relatorio semanal de feedbacks foi gerado com sucesso.
+            </div>
+            <table style="width:100%;margin:20px 0">
+                <tr>
+                    <td style="text-align:center;padding:20px;background:#f8f9fa;border-radius:8px;width:50%">
+                        <div style="font-size:32px;font-weight:bold;color:#28a745" th:text="${totalFeedbacks}">150</div>
+                        <div style="font-size:14px;color:#666">Total de Feedbacks</div>
+                    </td>
+                    <td style="width:10px"></td>
+                    <td style="text-align:center;padding:20px;background:#f8f9fa;border-radius:8px;width:50%">
+                        <div style="font-size:32px;font-weight:bold;color:#28a745" th:text="${averageScore}">4.2</div>
+                        <div style="font-size:14px;color:#666">Nota Media</div>
+                    </td>
+                </tr>
+            </table>
+            <p style="padding:10px 0;border-bottom:1px solid #e0e0e0"><strong>Data de Geracao:</strong> <span th:text="${generatedAt}">01/01/2026 10:00:00</span></p>
+            <div style="text-align:center;margin:25px 0">
+                <a th:href="${reportLink}" style="display:inline-block;background:#007bff;color:#fff;padding:15px 30px;text-decoration:none;border-radius:5px;font-weight:bold">Baixar Relatorio Completo</a>
+            </div>
+            <p style="font-size:14px;color:#666"><strong>Link direto do relatorio:</strong></p>
+            <div style="word-break:break-all;background:#f8f9fa;padding:10px;border-radius:5px;font-family:monospace;font-size:12px" th:text="${reportLink}">https://bucket.s3.amazonaws.com/reports/report.json</div>
+        </div>
+        <div style="background:#f8f9fa;padding:20px;text-align:center;font-size:12px;color:#666;border-radius:0 0 8px 8px">
+            <p style="margin:5px 0">Este e um e-mail automatico do sistema de Feedbacks.</p>
+            <p style="margin:5px 0">Gerado em <span th:text="${generatedAt}">01/01/2026 10:00:00</span></p>
+            <p style="margin:5px 0">FIAP - Pos-Tech 2026</p>
+        </div>
+    </div>
+</body>
+</html>

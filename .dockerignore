@@ -1,0 +1,24 @@
+# Arquivos de ambiente
+.env
+*.env.local
+
+# Build
+target/
+*.jar
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# LocalStack
+localstack_data/

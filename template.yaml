@@ -1,0 +1,371 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Feedback Platform - Arquitetura Serverless
+  Tech Challenge Fase 4 - FIAP
+
+# ==========================================
+# Parâmetros Globais
+# ==========================================
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: java21
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        SPRING_PROFILES_ACTIVE: prod
+        JAVA_TOOL_OPTIONS: "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+
+# ==========================================
+# Parâmetros de Input
+# ==========================================
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Environment name
+
+  DatabaseUrl:
+    Type: String
+    Description: JDBC URL for PostgreSQL database (ex: jdbc:postgresql://host:5432/database)
+    NoEcho: true
+
+  DatabaseUsername:
+    Type: String
+    Default: admin
+    Description: Database username
+
+  DatabasePassword:
+    Type: String
+    NoEcho: true
+    Description: Database password
+
+  SesFromEmail:
+    Type: String
+    Default: noreply@example.com
+    Description: Email remetente para notificações (deve estar verificado no SES)
+
+  SesRecipientEmail:
+    Type: String
+    Default: admin@example.com
+    Description: Email destinatário para notificações de feedback crítico
+
+# ==========================================
+# Recursos
+# ==========================================
+Resources:
+
+  # ==========================================
+  # SQS Queue - Fila de Feedbacks
+  # ==========================================
+  FeedbackQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "feedback-queue-${Environment}"
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 345600  # 4 dias
+      ReceiveMessageWaitTimeSeconds: 10
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt FeedbackDLQ.Arn
+        maxReceiveCount: 3
+
+  FeedbackDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "feedback-dlq-${Environment}"
+      MessageRetentionPeriod: 1209600  # 14 dias
+
+  # ==========================================
+  # SNS Topic - Notificações
+  # ==========================================
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "feedback-notifications-${Environment}"
+      DisplayName: "Feedback Notifications"
+
+  # ==========================================
+  # S3 Bucket - Relatórios
+  # ==========================================
+  ReportsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "feedback-reports-${AWS::AccountId}-${Environment}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldReports
+            Status: Enabled
+            ExpirationInDays: 90
+
+  # ==========================================
+  # IAM Role para Lambdas
+  # ==========================================
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "feedback-lambda-role-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - PolicyName: FeedbackLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # SQS
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  - !GetAtt FeedbackQueue.Arn
+                  - !GetAtt FeedbackDLQ.Arn
+              # SNS
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref NotificationTopic
+              # S3
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ReportsBucket.Arn
+                  - !Sub "${ReportsBucket.Arn}/*"
+              # SES
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: "*"
+              # CloudWatch Logs
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  # ==========================================
+  # Lambda 1: Feedback Ingestion
+  # ==========================================
+  FeedbackIngestionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "feedback-ingestion-${Environment}"
+      Description: "Recebe feedbacks via API e envia para SQS"
+      CodeUri: feedback-ingestion/target/feedback-ingestion-1.0.0-SNAPSHOT-aws.jar
+      Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: 1024
+      Timeout: 30
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: ingestFeedback
+          # Database configuration - variáveis esperadas pelo application.yaml
+          SPRING_DATASOURCE_URL: !Ref DatabaseUrl
+          SPRING_DATASOURCE_USERNAME: !Ref DatabaseUsername
+          SPRING_DATASOURCE_PASSWORD: !Ref DatabasePassword
+          # AWS Configuration
+          AWS_REGION: !Ref AWS::Region
+          SQS_QUEUE_NAME: !GetAtt FeedbackQueue.QueueName
+          SQS_QUEUE_URL: !Ref FeedbackQueue
+      Events:
+        ApiPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref FeedbackApi
+            Path: /feedbacks
+            Method: POST
+        ApiGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref FeedbackApi
+            Path: /feedbacks
+            Method: GET
+        ApiGetById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref FeedbackApi
+            Path: /feedbacks/{id}
+            Method: GET
+
+  # ==========================================
+  # Lambda 2: Feedback Analysis
+  # ==========================================
+  FeedbackAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "feedback-analysis-${Environment}"
+      Description: "Analisa feedbacks da fila SQS e publica no SNS"
+      CodeUri: feedback-analysis/target/feedback-analysis-1.0.0-SNAPSHOT-aws.jar
+      Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: 1024
+      Timeout: 60
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: analyzeFeedback
+          # AWS Configuration - variáveis esperadas pelo application.yaml
+          AWS_REGION: !Ref AWS::Region
+          SQS_QUEUE_NAME: !GetAtt FeedbackQueue.QueueName
+          SNS_TOPIC_ARN: !Ref NotificationTopic
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt FeedbackQueue.Arn
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 5
+
+  # ==========================================
+  # Lambda 3: Feedback Notification
+  # ==========================================
+  FeedbackNotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "feedback-notification-${Environment}"
+      Description: "Envia notificações por email via SES"
+      CodeUri: feedback-notification/target/feedback-notification-1.0.0-SNAPSHOT-aws.jar
+      Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: 512
+      Timeout: 30
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: sendNotification
+          # AWS Configuration - variáveis esperadas pelo application.yaml
+          AWS_REGION: !Ref AWS::Region
+          SES_FROM_EMAIL: !Ref SesFromEmail
+          SES_RECIPIENT_EMAIL: !Ref SesRecipientEmail
+          AWS_SES_ENABLED: "true"
+      Events:
+        SNSEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref NotificationTopic
+
+  # ==========================================
+  # Lambda 4: Feedback Reporting
+  # ==========================================
+  FeedbackReportingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "feedback-reporting-${Environment}"
+      Description: "Gera relatórios semanais e salva no S3"
+      CodeUri: feedback-reporting/target/feedback-reporting-1.0.0-SNAPSHOT-aws.jar
+      Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: 1024
+      Timeout: 120
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: generateReport
+          # Database configuration - variáveis esperadas pelo application.yaml
+          SPRING_DATASOURCE_URL: !Ref DatabaseUrl
+          SPRING_DATASOURCE_USERNAME: !Ref DatabaseUsername
+          SPRING_DATASOURCE_PASSWORD: !Ref DatabasePassword
+          # AWS Configuration
+          AWS_REGION: !Ref AWS::Region
+          S3_BUCKET_NAME: !Ref ReportsBucket
+          SNS_TOPIC_ARN: !Ref NotificationTopic
+          REPORT_FORMAT: csv
+      Events:
+        ScheduleWeekly:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 8 ? * MON *)  # Segunda-feira às 8h UTC
+            Description: "Gera relatório semanal"
+            Enabled: true
+
+  # ==========================================
+  # API Gateway
+  # ==========================================
+  FeedbackApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub "feedback-api-${Environment}"
+      StageName: !Ref Environment
+      Description: "API para Feedback Platform"
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+        AllowOrigin: "'*'"
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+
+# ==========================================
+# Outputs
+# ==========================================
+Outputs:
+  ApiUrl:
+    Description: "URL da API Gateway"
+    Value: !Sub "https://${FeedbackApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiUrl"
+
+  FeedbackQueueUrl:
+    Description: "URL da fila SQS"
+    Value: !Ref FeedbackQueue
+    Export:
+      Name: !Sub "${AWS::StackName}-QueueUrl"
+
+  FeedbackQueueArn:
+    Description: "ARN da fila SQS"
+    Value: !GetAtt FeedbackQueue.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-QueueArn"
+
+  NotificationTopicArn:
+    Description: "ARN do tópico SNS"
+    Value: !Ref NotificationTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-TopicArn"
+
+  ReportsBucketName:
+    Description: "Nome do bucket S3"
+    Value: !Ref ReportsBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketName"
+
+  IngestionFunctionArn:
+    Description: "ARN da Lambda de Ingestion"
+    Value: !GetAtt FeedbackIngestionFunction.Arn
+
+  AnalysisFunctionArn:
+    Description: "ARN da Lambda de Analysis"
+    Value: !GetAtt FeedbackAnalysisFunction.Arn
+
+  NotificationFunctionArn:
+    Description: "ARN da Lambda de Notification"
+    Value: !GetAtt FeedbackNotificationFunction.Arn
+
+  ReportingFunctionArn:
+    Description: "ARN da Lambda de Reporting"
+    Value: !GetAtt FeedbackReportingFunction.Arn

@@ -1,0 +1,46 @@
+# Build output
+target/
+build/
+*.jar
+*.war
+*.class
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# Maven wrapper (usar mvn global)
+mvnw
+mvnw.cmd
+.mvn/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# LocalStack
+localstack_data/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+
+# Test output
+test-output/
+surefire-reports/
