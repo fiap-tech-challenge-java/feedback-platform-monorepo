@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-// Record do Java 17+ (Immutable and lightweight)
 public record FeedbackEventDTO(
         Long id,
         String description,

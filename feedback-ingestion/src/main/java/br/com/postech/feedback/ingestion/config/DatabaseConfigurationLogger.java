@@ -7,10 +7,6 @@ import org.springframework.boot.context.event.ApplicationContextInitializedEvent
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-/**
- * Listener que loga as variáveis de ambiente críticas para Lambda.
- * Ajuda a debugar problemas de configuração.
- */
 @Component
 public class DatabaseConfigurationLogger {
 
@@ -51,7 +47,6 @@ public class DatabaseConfigurationLogger {
         logger.info("📝 [CONFIG] AWS ENDPOINT: {}", awsEndpoint.isEmpty() ? "[PRODUCTION]" : awsEndpoint);
         logger.info("════════════════════════════════════════════════════════════════");
 
-        // Validação
         if (datasourceUrl.isEmpty() || datasourceUrl.contains("localhost")) {
             logger.warn("⚠️  [CONFIG] DATASOURCE URL está vazio ou localhost! Verifique SPRING_DATASOURCE_URL");
         }
@@ -67,7 +62,6 @@ public class DatabaseConfigurationLogger {
         if (value == null || value.isEmpty()) {
             return "[NOT SET]";
         }
-        // Mascara password em URLs
         return value.replaceAll("password=[^&;]*", "password=***");
     }
 }

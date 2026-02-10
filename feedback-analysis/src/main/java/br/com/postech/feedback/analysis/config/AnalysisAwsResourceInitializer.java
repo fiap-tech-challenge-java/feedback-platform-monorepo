@@ -9,13 +9,6 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 import software.amazon.awssdk.services.sqs.model.QueueNameExistsException;
 
-/**
- * Inicializador de recursos AWS para o serviço de Analysis.
- *
- * Recursos criados automaticamente no LocalStack:
- * - SQS Queue para receber feedbacks (que o @SqsListener escuta)
- * - SNS Topic para notificações
- */
 @Component
 public class AnalysisAwsResourceInitializer extends AwsResourceInitializer {
 

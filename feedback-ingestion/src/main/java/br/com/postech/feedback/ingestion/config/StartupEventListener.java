@@ -8,12 +8,6 @@ import org.springframework.boot.context.event.ApplicationStartingEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-/**
- * Listener para rastrear e logar o tempo de startup da aplicação.
- *
- * Útil para debugar problemas de timeout em AWS Lambda.
- * Mostra em qual fase a aplicação está demorando.
- */
 @Component
 public class StartupEventListener {
 

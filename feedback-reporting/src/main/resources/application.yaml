@@ -1,30 +1,17 @@
-# ===========================================
-# Configuração AWS Lambda - Feedback Reporting
-# ===========================================
-# IMPORTANTE: Para usar em AWS Lambda, configure estas variáveis de ambiente:
-# - SPRING_DATASOURCE_URL: jdbc:postgresql://host:5432/database
-# - SPRING_DATASOURCE_USERNAME: usuário do banco
-# - SPRING_DATASOURCE_PASSWORD: senha do banco
-# - AWS_REGION: região AWS (ex: us-east-2)
-# - AWS_S3_ENDPOINT: deixar vazio em produção (apenas para LocalStack)
-# - AWS_SNS_ENDPOINT: deixar vazio em produção (apenas para LocalStack)
-# - S3_BUCKET_NAME: nome do bucket S3 (obrigatório)
-# - SNS_TOPIC_ARN: ARN do tópico SNS (obrigatório)
-
 spring:
   application:
     name: feedback-reporting
   main:
-    web-application-type: none  # Lambda não precisa de web server
+    web-application-type: none
 
   cloud:
     function:
       definition: generateReport
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/feedbackdb}
-    username: ${SPRING_DATASOURCE_USERNAME:admin}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 2
@@ -40,30 +27,25 @@ spring:
         format_sql: false
     open-in-view: false
 
-# AWS Configuration
 cloud:
   aws:
     region:
-      static: ${AWS_REGION:us-east-2}
+      static: ${AWS_REGION:}
     s3:
-      endpoint: ${AWS_S3_ENDPOINT:https://s3.us-east-2.amazonaws.com}
+      endpoint: ${AWS_S3_ENDPOINT:}
     sns:
-      endpoint: ${AWS_SNS_ENDPOINT:https://sns.us-east-2.amazonaws.com}
+      endpoint: ${AWS_SNS_ENDPOINT:}
 
-# Application specific - S3_BUCKET_NAME e SNS_TOPIC_ARN são OBRIGATÓRIOS em produção
-# Se não configurados, a aplicação falhará ao tentar gerar relatórios
 aws:
-  region: ${AWS_REGION:us-east-2}
+  region: ${AWS_REGION:}
   s3:
     bucket-name: ${S3_BUCKET_NAME:}
   sns:
     topic-arn: ${SNS_TOPIC_ARN:}
 
-# Report Configuration
 reporting:
   format: ${REPORT_FORMAT:csv}
 
-# Logging otimizado para Lambda
 logging:
   level:
     root: INFO

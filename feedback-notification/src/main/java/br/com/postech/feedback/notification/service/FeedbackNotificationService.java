@@ -22,10 +22,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.function.Function;
 
-/**
- * Serviço responsável por processar notificações SNS e enviar e-mails via SES
- * Responsabilidade Única: Envio de notificações por e-mail para feedbacks críticos
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -46,10 +42,6 @@ public class FeedbackNotificationService {
     @Value("${aws.ses.enabled:true}")
     private boolean sesEnabled;
 
-    /**
-     * Valida a configuração do SES no momento do uso.
-     * Lança exceção com mensagem clara se as variáveis não estiverem configuradas.
-     */
     private void validateSesConfiguration() {
         if (senderEmail == null || senderEmail.isBlank()) {
             log.error("=== SES CONFIGURATION ERROR ===");
@@ -67,11 +59,6 @@ public class FeedbackNotificationService {
         }
     }
 
-    /**
-     * Bean que define a função serverless para consumir mensagens do SNS
-     * Esta função é acionada automaticamente quando uma mensagem chega ao tópico SNS
-     * Retorna uma resposta HTTP com status e detalhes do processamento
-     */
     @Bean
     public Function<String, NotificationResponseDTO> processNotification() {
         return snsMessage -> {
@@ -143,9 +130,6 @@ public class FeedbackNotificationService {
         };
     }
 
-    /**
-     * Extrai o corpo da mensagem do formato SNS
-     */
     private String extractMessageBody(String message) throws Exception {
         JsonNode rootNode = objectMapper.readTree(message);
 
@@ -164,9 +148,6 @@ public class FeedbackNotificationService {
         return message;
     }
 
-    /**
-     * Verifica se a mensagem é um evento de relatório pronto
-     */
     private boolean isReportReadyEvent(String messageBody) {
         try {
             JsonNode node = objectMapper.readTree(messageBody);
@@ -176,9 +157,6 @@ public class FeedbackNotificationService {
         }
     }
 
-    /**
-     * Processa evento de relatório pronto
-     */
     private NotificationResponseDTO processReportReadyEvent(String messageBody) {
         try {
             ReportReadyEventDTO reportEvent = objectMapper.readValue(messageBody, ReportReadyEventDTO.class);
@@ -214,12 +192,6 @@ public class FeedbackNotificationService {
         }
     }
 
-    /**
-
-    /**
-     * Envia e-mail usando AWS SES com template HTML
-     * @return true se o email foi enviado, false se SES está desabilitado
-     */
     private boolean sendEmail(NotificationEmailDTO emailData) {
         if (!sesEnabled) {
             log.warn("SES está desabilitado. E-mail não será enviado. Dados: {}", emailData);
@@ -267,9 +239,6 @@ public class FeedbackNotificationService {
         }
     }
 
-    /**
-     * Gera o HTML do e-mail usando template Thymeleaf
-     */
     private String generateEmailHtml(NotificationEmailDTO emailData) {
         Context context = new Context();
 

@@ -10,10 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-/**
- * Serviço responsável por gerar relatórios semanais em formato CSV.
- * O CSV é formatado para ser apresentável no Excel com separador ; (padrão brasileiro).
- */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -23,9 +19,6 @@ public class ReportGeneratorService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    /**
-     * Gera o relatório CSV como bytes para upload no S3.
-     */
     public byte[] generateReportAsBytes(ReportMetrics metrics, LocalDateTime generatedAt) {
         log.info("Generating CSV report...");
         try {
@@ -37,20 +30,9 @@ public class ReportGeneratorService {
         }
     }
 
-    /**
-     * Gera o relatório CSV formatado e apresentável.
-     * 
-     * Requisitos obrigatórios atendidos:
-     * - Descrição
-     * - Urgência  
-     * - Data de envio
-     * - Quantidade de avaliações por dia
-     * - Quantidade de avaliações por urgência
-     */
     private String generateCsvReport(ReportMetrics metrics, LocalDateTime generatedAt) {
         StringBuilder csv = new StringBuilder();
         
-        // BOM para UTF-8 (Excel reconhece acentos corretamente)
         csv.append("\uFEFF");
         
 
@@ -94,7 +76,6 @@ public class ReportGeneratorService {
         if (metrics.getFeedbacksByUrgency() != null && !metrics.getFeedbacksByUrgency().isEmpty()) {
             long total = metrics.getTotalFeedbacks() != null ? metrics.getTotalFeedbacks() : 1;
             
-            // Ordenar por prioridade: CRITICAL > HIGH > MEDIUM > LOW
             metrics.getFeedbacksByUrgency().entrySet().stream()
                     .sorted((e1, e2) -> getUrgencyPriority(e1.getKey()) - getUrgencyPriority(e2.getKey()))
                     .forEach(entry -> {
@@ -165,9 +146,6 @@ public class ReportGeneratorService {
                .append("Nenhum feedback registrado no período").append("\n");
         }
         
-        // ════════════════════════════════════════════════════════════════════════════
-        // RODAPÉ
-        // ════════════════════════════════════════════════════════════════════════════
         csv.append("\n");
         csv.append("═══════════════════════════════════════════════════════════════════════════════").append("\n");
         csv.append("FIM DO RELATÓRIO").append("\n");
@@ -176,9 +154,6 @@ public class ReportGeneratorService {
         return csv.toString();
     }
 
-    // ════════════════════════════════════════════════════════════════════════════
-    // MÉTODOS AUXILIARES
-    // ════════════════════════════════════════════════════════════════════════════
 
     private String calculateSatisfactionLevel(Double averageScore) {
         if (averageScore == null) return "N/A";
@@ -241,23 +216,20 @@ public class ReportGeneratorService {
     private String formatDate(String dateStr) {
         if (dateStr == null || dateStr.isBlank()) return "-";
         try {
-            // Tenta parsear como LocalDateTime primeiro
             if (dateStr.contains("T") || dateStr.contains(" ")) {
                 java.time.LocalDateTime dateTime = java.time.LocalDateTime.parse(
                         dateStr.replace(" ", "T").substring(0, Math.min(19, dateStr.length())));
                 return dateTime.format(DATE_FORMATTER);
             }
-            // Se for só data (yyyy-MM-dd), formata para dd/MM/yyyy
             java.time.LocalDate date = java.time.LocalDate.parse(dateStr);
             return date.format(DATE_FORMATTER);
         } catch (Exception e) {
-            return dateStr; // Retorna original se não conseguir formatar
+            return dateStr;
         }
     }
 
     private String sanitizeForCsv(String text) {
         if (text == null) return "";
-        // Remove caracteres problemáticos para CSV
         return text.replace(";", ",")
                    .replace("\n", " ")
                    .replace("\r", " ")
