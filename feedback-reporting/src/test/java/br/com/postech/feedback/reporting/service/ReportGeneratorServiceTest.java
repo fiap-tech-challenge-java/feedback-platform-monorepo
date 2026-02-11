@@ -90,7 +90,8 @@ class ReportGeneratorServiceTest {
         assertThat(csvContent).contains("Total de Feedbacks");
         assertThat(csvContent).contains("19");
         assertThat(csvContent).contains("Nota Média");
-        assertThat(csvContent).contains("4.50");
+        // Aceita tanto formato brasileiro (4,50) quanto internacional (4.50)
+        assertThat(csvContent).containsAnyOf("4,50", "4.50");
         assertThat(csvContent).contains("EXCELENTE");
     }
 
