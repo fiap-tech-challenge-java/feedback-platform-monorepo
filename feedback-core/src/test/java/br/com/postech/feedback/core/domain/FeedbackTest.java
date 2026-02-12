@@ -482,4 +482,239 @@ class FeedbackTest {
             assertEquals("Updated description", feedback.getDescription());
         }
     }
+
+    @Nested
+    @DisplayName("JPA Annotations Validation Tests")
+    class JpaAnnotationsValidationTests {
+
+        @Test
+        @DisplayName("Entity annotation should be present")
+        void entityAnnotationShouldBePresent() {
+            assertTrue(Feedback.class.isAnnotationPresent(jakarta.persistence.Entity.class));
+        }
+
+        @Test
+        @DisplayName("Table annotation should have correct name")
+        void tableAnnotationShouldHaveCorrectName() {
+            jakarta.persistence.Table tableAnnotation = Feedback.class.getAnnotation(jakarta.persistence.Table.class);
+            assertNotNull(tableAnnotation);
+            assertEquals("feedbacks", tableAnnotation.name());
+        }
+
+        @Test
+        @DisplayName("Id field should have Id annotation")
+        void idFieldShouldHaveIdAnnotation() throws NoSuchFieldException {
+            java.lang.reflect.Field idField = Feedback.class.getDeclaredField("id");
+            assertTrue(idField.isAnnotationPresent(jakarta.persistence.Id.class));
+        }
+
+        @Test
+        @DisplayName("Id field should have GeneratedValue annotation")
+        void idFieldShouldHaveGeneratedValueAnnotation() throws NoSuchFieldException {
+            java.lang.reflect.Field idField = Feedback.class.getDeclaredField("id");
+            assertTrue(idField.isAnnotationPresent(jakarta.persistence.GeneratedValue.class));
+
+            jakarta.persistence.GeneratedValue generatedValue = idField.getAnnotation(jakarta.persistence.GeneratedValue.class);
+            assertEquals(jakarta.persistence.GenerationType.IDENTITY, generatedValue.strategy());
+        }
+
+        @Test
+        @DisplayName("Rating field should have NotNull annotation")
+        void ratingFieldShouldHaveNotNullAnnotation() throws NoSuchFieldException {
+            java.lang.reflect.Field ratingField = Feedback.class.getDeclaredField("rating");
+            assertTrue(ratingField.isAnnotationPresent(jakarta.validation.constraints.NotNull.class));
+        }
+
+        @Test
+        @DisplayName("Rating field should have Min annotation with value 0")
+        void ratingFieldShouldHaveMinAnnotationWithValue0() throws NoSuchFieldException {
+            java.lang.reflect.Field ratingField = Feedback.class.getDeclaredField("rating");
+            assertTrue(ratingField.isAnnotationPresent(jakarta.validation.constraints.Min.class));
+
+            jakarta.validation.constraints.Min minAnnotation = ratingField.getAnnotation(jakarta.validation.constraints.Min.class);
+            assertEquals(0, minAnnotation.value());
+        }
+
+        @Test
+        @DisplayName("Rating field should have Max annotation with value 10")
+        void ratingFieldShouldHaveMaxAnnotationWithValue10() throws NoSuchFieldException {
+            java.lang.reflect.Field ratingField = Feedback.class.getDeclaredField("rating");
+            assertTrue(ratingField.isAnnotationPresent(jakarta.validation.constraints.Max.class));
+
+            jakarta.validation.constraints.Max maxAnnotation = ratingField.getAnnotation(jakarta.validation.constraints.Max.class);
+            assertEquals(10, maxAnnotation.value());
+        }
+
+        @Test
+        @DisplayName("Status field should have Enumerated annotation")
+        void statusFieldShouldHaveEnumeratedAnnotation() throws NoSuchFieldException {
+            java.lang.reflect.Field statusField = Feedback.class.getDeclaredField("status");
+            assertTrue(statusField.isAnnotationPresent(jakarta.persistence.Enumerated.class));
+
+            jakarta.persistence.Enumerated enumerated = statusField.getAnnotation(jakarta.persistence.Enumerated.class);
+            assertEquals(jakarta.persistence.EnumType.STRING, enumerated.value());
+        }
+
+        @Test
+        @DisplayName("CreatedAt field should have Column annotation with correct name")
+        void createdAtFieldShouldHaveColumnAnnotationWithCorrectName() throws NoSuchFieldException {
+            java.lang.reflect.Field createdAtField = Feedback.class.getDeclaredField("createdAt");
+            assertTrue(createdAtField.isAnnotationPresent(jakarta.persistence.Column.class));
+
+            jakarta.persistence.Column column = createdAtField.getAnnotation(jakarta.persistence.Column.class);
+            assertEquals("created_at", column.name());
+        }
+
+        @Test
+        @DisplayName("UpdatedAt field should have Column annotation with correct name")
+        void updatedAtFieldShouldHaveColumnAnnotationWithCorrectName() throws NoSuchFieldException {
+            java.lang.reflect.Field updatedAtField = Feedback.class.getDeclaredField("updatedAt");
+            assertTrue(updatedAtField.isAnnotationPresent(jakarta.persistence.Column.class));
+
+            jakarta.persistence.Column column = updatedAtField.getAnnotation(jakarta.persistence.Column.class);
+            assertEquals("updated_at", column.name());
+        }
+    }
+
+    @Nested
+    @DisplayName("Null Safety Tests")
+    class NullSafetyTests {
+
+        @Test
+        @DisplayName("Should handle null description in setter")
+        void shouldHandleNullDescriptionInSetter() {
+            Feedback feedback = new Feedback();
+            feedback.setDescription(null);
+            assertNull(feedback.getDescription());
+        }
+
+        @Test
+        @DisplayName("Should handle null status in setter")
+        void shouldHandleNullStatusInSetter() {
+            Feedback feedback = new Feedback();
+            feedback.setStatus(null);
+            assertNull(feedback.getStatus());
+        }
+
+        @Test
+        @DisplayName("Should handle null createdAt in setter")
+        void shouldHandleNullCreatedAtInSetter() {
+            Feedback feedback = new Feedback();
+            feedback.setCreatedAt(null);
+            assertNull(feedback.getCreatedAt());
+        }
+
+        @Test
+        @DisplayName("Should handle null updatedAt in setter")
+        void shouldHandleNullUpdatedAtInSetter() {
+            Feedback feedback = new Feedback();
+            feedback.setUpdatedAt(null);
+            assertNull(feedback.getUpdatedAt());
+        }
+
+        @Test
+        @DisplayName("Should handle null rating in setter")
+        void shouldHandleNullRatingInSetter() {
+            Feedback feedback = new Feedback();
+            feedback.setRating(null);
+            assertNull(feedback.getRating());
+        }
+    }
+
+    @Nested
+    @DisplayName("Constructor Exception Message Tests")
+    class ConstructorExceptionMessageTests {
+
+        @Test
+        @DisplayName("Should have correct exception message for rating -1")
+        void shouldHaveCorrectExceptionMessageForRatingMinus1() {
+            IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new Feedback("Test", -1)
+            );
+            assertEquals("Rating deve estar entre 0 e 10", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should have correct exception message for rating 11")
+        void shouldHaveCorrectExceptionMessageForRating11() {
+            IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new Feedback("Test", 11)
+            );
+            assertEquals("Rating deve estar entre 0 e 10", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should have correct exception message for rating 100")
+        void shouldHaveCorrectExceptionMessageForRating100() {
+            IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new Feedback("Test", 100)
+            );
+            assertEquals("Rating deve estar entre 0 e 10", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should have correct exception message for rating -100")
+        void shouldHaveCorrectExceptionMessageForRatingMinus100() {
+            IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new Feedback("Test", -100)
+            );
+            assertEquals("Rating deve estar entre 0 e 10", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should have correct exception message for null rating")
+        void shouldHaveCorrectExceptionMessageForNullRating() {
+            IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new Feedback("Test", null)
+            );
+            assertEquals("Rating deve estar entre 0 e 10", exception.getMessage());
+        }
+    }
+
+    @Nested
+    @DisplayName("Data Annotation Tests")
+    class DataAnnotationTests {
+
+        @Test
+        @DisplayName("Feedback should have getter methods from @Data")
+        void feedbackShouldHaveGetterMethodsFromData() {
+            Feedback feedback = new Feedback("Test", 5);
+            feedback.setId(1L);
+
+            // Test all getters work correctly
+            assertNotNull(feedback.getId());
+            assertNotNull(feedback.getDescription());
+            assertNotNull(feedback.getRating());
+            assertNotNull(feedback.getStatus());
+            assertNotNull(feedback.getCreatedAt());
+            assertNotNull(feedback.getUpdatedAt());
+        }
+
+        @Test
+        @DisplayName("Feedback should have setter methods from @Data")
+        void feedbackShouldHaveSetterMethodsFromData() {
+            Feedback feedback = new Feedback();
+            LocalDateTime now = LocalDateTime.now();
+
+            // Test all setters work correctly
+            feedback.setId(1L);
+            feedback.setDescription("Test");
+            feedback.setRating(5);
+            feedback.setStatus(StatusFeedback.NORMAL);
+            feedback.setCreatedAt(now);
+            feedback.setUpdatedAt(now);
+
+            assertEquals(1L, feedback.getId());
+            assertEquals("Test", feedback.getDescription());
+            assertEquals(5, feedback.getRating());
+            assertEquals(StatusFeedback.NORMAL, feedback.getStatus());
+            assertEquals(now, feedback.getCreatedAt());
+            assertEquals(now, feedback.getUpdatedAt());
+        }
+    }
 }

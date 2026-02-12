@@ -10,6 +10,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.TestPropertySource;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,12 +23,18 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @TestPropertySource(properties = {
 	"spring.cloud.aws.sqs.enabled=false",
-	"spring.cloud.aws.sns.enabled=false"
+	"spring.cloud.aws.sns.enabled=false",
+	"spring.cloud.aws.region.static=us-east-2",
+	"spring.cloud.aws.endpoint=",
+	"SNS_TOPIC_ARN=arn:aws:sns:us-east-2:123456789012:test-topic"
 })
 class FeedbackAnalysisApplicationTests {
 
 	@MockBean
 	private SnsClient snsClient;
+
+	@MockBean
+	private SqsClient sqsClient;
 
 	@MockBean
 	private SqsAsyncClient sqsAsyncClient;

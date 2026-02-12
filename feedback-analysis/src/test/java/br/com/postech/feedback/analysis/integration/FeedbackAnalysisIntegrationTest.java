@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.PublishResponse;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -36,6 +37,8 @@ import static org.mockito.Mockito.*;
 @TestPropertySource(properties = {
         "spring.cloud.aws.sqs.enabled=false",
         "spring.cloud.aws.sns.enabled=false",
+        "spring.cloud.aws.region.static=us-east-2",
+        "spring.cloud.aws.endpoint=",
         "SNS_TOPIC_ARN=arn:aws:sns:us-east-2:123456789012:test-topic"
 })
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +47,9 @@ class FeedbackAnalysisIntegrationTest {
 
     @MockBean
     private SnsClient snsClient;
+
+    @MockBean
+    private SqsClient sqsClient;
 
     @MockBean
     private SqsAsyncClient sqsAsyncClient;
