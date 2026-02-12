@@ -7,8 +7,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -33,15 +35,28 @@ public class AwsConfig {
     @Value("${aws.secret-key:}")
     private String secretKey;
 
+    private Region resolveRegion() {
+        if (region != null && !region.isBlank()) {
+            return Region.of(region);
+        }
+        return new DefaultAwsRegionProviderChain().getRegion();
+    }
+
+    private boolean isLocalEnvironment() {
+        return endpointUrl != null && !endpointUrl.isBlank();
+    }
+
     @Bean
     public SnsClient snsClient() {
         var builder = SnsClient.builder()
-                .region(Region.of(region));
+                .region(resolveRegion());
 
-        if (endpointUrl != null && !endpointUrl.isBlank()) {
+        if (isLocalEnvironment()) {
             builder.endpointOverride(URI.create(endpointUrl))
                     .credentialsProvider(StaticCredentialsProvider.create(
                             AwsBasicCredentials.create(accessKey, secretKey)));
+        } else {
+            builder.credentialsProvider(DefaultCredentialsProvider.create());
         }
 
         return builder.build();
@@ -50,17 +65,19 @@ public class AwsConfig {
     @Bean
     public SqsClient sqsClient() {
         var builder = SqsClient.builder()
-                .region(Region.of(region));
+                .region(resolveRegion());
 
-        if (endpointUrl != null && !endpointUrl.isBlank()) {
+        if (isLocalEnvironment()) {
             builder.endpointOverride(URI.create(endpointUrl))
                     .credentialsProvider(StaticCredentialsProvider.create(
                             AwsBasicCredentials.create(accessKey, secretKey)));
+        } else {
+            builder.credentialsProvider(DefaultCredentialsProvider.create());
         }
 
         SqsClient client = builder.build();
 
-        if (endpointUrl != null && !endpointUrl.isBlank()) {
+        if (isLocalEnvironment()) {
             createQueueIfNotExists(client);
         }
 
@@ -68,14 +85,16 @@ public class AwsConfig {
     }
 
     @Bean
-    public SqsAsyncClient sqsAsyncClient(SqsClient sqsClient) {
+    public SqsAsyncClient sqsAsyncClient() {
         var builder = SqsAsyncClient.builder()
-                .region(Region.of(region));
+                .region(resolveRegion());
 
-        if (endpointUrl != null && !endpointUrl.isBlank()) {
+        if (isLocalEnvironment()) {
             builder.endpointOverride(URI.create(endpointUrl))
                     .credentialsProvider(StaticCredentialsProvider.create(
                             AwsBasicCredentials.create(accessKey, secretKey)));
+        } else {
+            builder.credentialsProvider(DefaultCredentialsProvider.create());
         }
 
         return builder.build();

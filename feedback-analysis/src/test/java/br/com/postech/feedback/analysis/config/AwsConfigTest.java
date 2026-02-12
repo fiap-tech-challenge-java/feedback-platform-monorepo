@@ -3,17 +3,13 @@ package br.com.postech.feedback.analysis.config;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 @DisplayName("AwsConfig Tests")
 class AwsConfigTest {
 
@@ -162,10 +158,8 @@ class AwsConfigTest {
             ReflectionTestUtils.setField(awsConfig, "region", "us-east-2");
             ReflectionTestUtils.setField(awsConfig, "endpointUrl", "");
 
-            SqsClient sqsClient = mock(SqsClient.class);
-
             // Act
-            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient(sqsClient);
+            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient();
 
             // Assert
             assertNotNull(sqsAsyncClient);
@@ -181,10 +175,8 @@ class AwsConfigTest {
             ReflectionTestUtils.setField(awsConfig, "endpointUrl", "http://localhost:4566");
             setLocalStackCredentials(awsConfig);
 
-            SqsClient sqsClient = mock(SqsClient.class);
-
             // Act
-            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient(sqsClient);
+            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient();
 
             // Assert
             assertNotNull(sqsAsyncClient);
@@ -199,10 +191,8 @@ class AwsConfigTest {
             ReflectionTestUtils.setField(awsConfig, "region", "us-east-2");
             ReflectionTestUtils.setField(awsConfig, "endpointUrl", null);
 
-            SqsClient sqsClient = mock(SqsClient.class);
-
             // Act
-            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient(sqsClient);
+            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient();
 
             // Assert
             assertNotNull(sqsAsyncClient);
@@ -323,8 +313,7 @@ class AwsConfigTest {
 
             // Act
             SnsClient snsClient = awsConfig.snsClient();
-            SqsClient sqsClientMock = mock(SqsClient.class);
-            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient(sqsClientMock);
+            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient();
 
             // Assert
             assertNotNull(snsClient);
@@ -370,8 +359,7 @@ class AwsConfigTest {
 
             // Act
             SnsClient snsClient = awsConfig.snsClient();
-            SqsClient sqsClientMock = mock(SqsClient.class);
-            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient(sqsClientMock);
+            SqsAsyncClient sqsAsyncClient = awsConfig.sqsAsyncClient();
 
             // Assert
             assertNotNull(snsClient);

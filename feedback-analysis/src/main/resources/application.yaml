@@ -7,19 +7,17 @@ spring:
   cloud:
     function:
       definition: analyzeFeedback
+    aws:
+      region:
+        static: ${AWS_REGION:}
+      sns:
+        endpoint: ${AWS_SNS_ENDPOINT:}
 
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
-
-cloud:
-  aws:
-    region:
-      static: ${AWS_REGION:}
-    sns:
-      endpoint: ${AWS_SNS_ENDPOINT:}
 
 app:
   sqs:
