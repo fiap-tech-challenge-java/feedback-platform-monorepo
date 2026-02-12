@@ -11,13 +11,6 @@ import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.CreateTopicRequest;
 
-/**
- * Inicializador de recursos AWS para o serviço de Reporting.
- *
- * Recursos criados automaticamente no LocalStack:
- * - S3 Bucket para armazenamento de relatórios
- * - SNS Topic para notificações
- */
 @Component
 public class ReportingAwsResourceInitializer extends AwsResourceInitializer {
 

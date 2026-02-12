@@ -3,9 +3,6 @@ package br.com.postech.feedback.notification.dto;
 import br.com.postech.feedback.core.domain.StatusFeedback;
 import java.time.LocalDateTime;
 
-/**
- * DTO para os dados que serão enviados no e-mail de notificação
- */
 public record NotificationEmailDTO(
         Long feedbackId,
         String description,
@@ -17,9 +14,6 @@ public record NotificationEmailDTO(
         Long totalFeedbacks,
         Double averageScore
 ) {
-    /**
-     * Construtor de conveniência para criar um DTO de notificação crítica
-     */
     public static NotificationEmailDTO fromCriticalFeedback(
             Long feedbackId,
             String description,
@@ -40,9 +34,6 @@ public record NotificationEmailDTO(
         );
     }
 
-    /**
-     * Construtor de conveniência para criar um DTO de relatório semanal
-     */
     public static NotificationEmailDTO fromWeeklyReport(
             String reportLink,
             Long totalFeedbacks,
@@ -62,9 +53,6 @@ public record NotificationEmailDTO(
         );
     }
 
-    /**
-     * Verifica se é uma notificação de relatório
-     */
     public boolean isReportNotification() {
         return reportLink != null;
     }

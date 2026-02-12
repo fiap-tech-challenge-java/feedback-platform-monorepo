@@ -26,10 +26,6 @@ public class SnsPublishService {
     @Value("${S3_BUCKET_NAME:}")
     private String bucketName;
 
-    /**
-     * Valida a configuração do SNS no momento do uso.
-     * Lança exceção com mensagem clara se as variáveis não estiverem configuradas.
-     */
     private void validateConfiguration() {
         if (topicArn == null || topicArn.isBlank()) {
             log.error("=== SNS CONFIGURATION ERROR ===");

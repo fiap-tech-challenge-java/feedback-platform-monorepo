@@ -39,11 +39,6 @@ public class FeedbackAnalysisService {
         }
     }
 
-    /**
-     * ✅ MODO 1: AWS LAMBDA (Produção)
-     * Recebe o evento bruto do SQS (SQSEvent), itera sobre os registros (batch)
-     * e processa cada um individualmente.
-     */
     @Bean
     public Consumer<SQSEvent> analyzeFeedback() {
         return event -> {
@@ -67,10 +62,6 @@ public class FeedbackAnalysisService {
         };
     }
 
-    /**
-     * ✅ MODO 2: LOCALSTACK / DESENVOLVIMENTO
-     * O @SqsListener do Spring Cloud AWS já entrega o objeto convertido.
-     */
     @SqsListener("feedback-analysis-queue")
     public void listen(FeedbackEventDTO event) {
         log.info("💻 [LOCAL] Mensagem capturada via SqsListener");

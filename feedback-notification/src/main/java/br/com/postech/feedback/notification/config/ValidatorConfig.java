@@ -6,9 +6,6 @@ import jakarta.validation.ValidatorFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Configuração de validação Bean Validation
- */
 @Configuration
 public class ValidatorConfig {
 

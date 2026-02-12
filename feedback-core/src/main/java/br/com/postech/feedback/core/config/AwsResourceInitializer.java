@@ -5,16 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 
-/**
- * Classe base para inicialização automática de recursos AWS/LocalStack.
- *
- * Esta classe deve ser estendida por cada serviço para criar seus recursos específicos.
- * Só executa se aws.endpoint estiver configurado (LocalStack).
- * Na AWS real (produção), não faz nada.
- *
- * Os métodos utilitários usam Object como parâmetro para evitar dependências
- * diretas do AWS SDK no módulo core. Cada serviço faz o cast apropriado.
- */
 public abstract class AwsResourceInitializer implements CommandLineRunner {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
@@ -42,8 +32,5 @@ public abstract class AwsResourceInitializer implements CommandLineRunner {
         logger.info("✅ AWS resources initialized successfully");
     }
 
-    /**
-     * Implementar este método para criar os recursos AWS específicos do serviço.
-     */
     protected abstract void initializeResources();
 }

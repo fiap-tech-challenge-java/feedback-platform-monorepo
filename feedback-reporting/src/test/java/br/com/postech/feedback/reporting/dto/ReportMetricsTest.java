@@ -10,10 +10,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Testes unitários para validação da estrutura de ReportMetrics.
- * Conforme exigido pelo Tech Challenge – Fase 4.
- */
 class ReportMetricsTest {
 
     @Test

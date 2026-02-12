@@ -8,9 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Classe responsável por gerenciar métricas customizadas do serviço de notificação
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -26,9 +23,6 @@ public class NotificationMetrics {
 
     private Timer processingTimer;
 
-    /**
-     * Inicializa as métricas customizadas
-     */
     @PostConstruct
     public void init() {
         emailsSentCounter = Counter.builder("notification.emails.sent")
