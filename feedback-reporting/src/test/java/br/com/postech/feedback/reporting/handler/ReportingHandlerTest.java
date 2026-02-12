@@ -156,4 +156,173 @@ class ReportingHandlerTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Report generation failed");
     }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando a geração do relatório CSV falhar")
+    void shouldThrowExceptionWhenReportGenerationFails() {
+        // Arrange
+        when(databaseQueryService.fetchMetrics()).thenReturn(mockMetrics);
+        when(reportGeneratorService.generateReportAsBytes(any(), any()))
+                .thenThrow(new RuntimeException("Failed to generate CSV"));
+
+        Map<String, Object> event = new HashMap<>();
+
+        // Act & Assert
+        Function<Map<String, Object>, Map<String, Object>> function = reportingHandler.generateReport();
+
+        assertThatThrownBy(() -> function.apply(event))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Report generation failed");
+
+        // Verify S3 and SNS were not called
+        verify(s3UploadService, never()).uploadReport(any(byte[].class), anyString(), anyString());
+        verify(snsPublishService, never()).publishReportReadyEvent(anyString(), anyString(), any(), anyLong(), anyDouble());
+    }
+
+    @Test
+    @DisplayName("Deve processar corretamente evento vazio")
+    void shouldProcessEmptyEventCorrectly() {
+        // Arrange
+        when(databaseQueryService.fetchMetrics()).thenReturn(mockMetrics);
+        when(reportGeneratorService.generateReportAsBytes(any(), any())).thenReturn("CSV".getBytes());
+        when(reportGeneratorService.generateS3Key(any())).thenReturn("key");
+        when(reportGeneratorService.getContentType()).thenReturn("text/csv; charset=UTF-8");
+        when(s3UploadService.uploadReport(any(byte[].class), anyString(), anyString()))
+                .thenReturn("https://bucket.s3.amazonaws.com/key");
+
+        Map<String, Object> emptyEvent = new HashMap<>();
+
+        // Act
+        Function<Map<String, Object>, Map<String, Object>> function = reportingHandler.generateReport();
+        Map<String, Object> result = function.apply(emptyEvent);
+
+        // Assert
+        assertThat(result.get("statusCode")).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("Deve incluir generatedAt no resultado")
+    void shouldIncludeGeneratedAtInResult() {
+        // Arrange
+        when(databaseQueryService.fetchMetrics()).thenReturn(mockMetrics);
+        when(reportGeneratorService.generateReportAsBytes(any(), any())).thenReturn("CSV".getBytes());
+        when(reportGeneratorService.generateS3Key(any())).thenReturn("key");
+        when(reportGeneratorService.getContentType()).thenReturn("text/csv; charset=UTF-8");
+        when(s3UploadService.uploadReport(any(byte[].class), anyString(), anyString()))
+                .thenReturn("https://bucket.s3.amazonaws.com/key");
+
+        Map<String, Object> event = new HashMap<>();
+
+        // Act
+        Function<Map<String, Object>, Map<String, Object>> function = reportingHandler.generateReport();
+        Map<String, Object> result = function.apply(event);
+
+        // Assert
+        assertThat(result.get("generatedAt")).isNotNull();
+        assertThat(result.get("generatedAt").toString()).isNotBlank();
+    }
+
+    @Test
+    @DisplayName("Deve processar métricas com valores zero")
+    void shouldProcessMetricsWithZeroValues() {
+        // Arrange
+        ReportMetrics zeroMetrics = ReportMetrics.builder()
+                .totalFeedbacks(0L)
+                .averageScore(0.0)
+                .feedbacksByDay(new HashMap<>())
+                .feedbacksByUrgency(new HashMap<>())
+                .feedbacks(new ArrayList<>())
+                .build();
+
+        when(databaseQueryService.fetchMetrics()).thenReturn(zeroMetrics);
+        when(reportGeneratorService.generateReportAsBytes(any(), any())).thenReturn("CSV".getBytes());
+        when(reportGeneratorService.generateS3Key(any())).thenReturn("key");
+        when(reportGeneratorService.getContentType()).thenReturn("text/csv; charset=UTF-8");
+        when(s3UploadService.uploadReport(any(byte[].class), anyString(), anyString()))
+                .thenReturn("https://bucket.s3.amazonaws.com/key");
+
+        Map<String, Object> event = new HashMap<>();
+
+        // Act
+        Function<Map<String, Object>, Map<String, Object>> function = reportingHandler.generateReport();
+        Map<String, Object> result = function.apply(event);
+
+        // Assert
+        assertThat(result.get("statusCode")).isEqualTo(200);
+        assertThat(result.get("totalFeedbacks")).isEqualTo(0L);
+        assertThat(result.get("averageScore")).isEqualTo(0.0);
+    }
+
+    @Test
+    @DisplayName("Deve processar métricas com valores altos")
+    void shouldProcessMetricsWithHighValues() {
+        // Arrange
+        ReportMetrics highMetrics = ReportMetrics.builder()
+                .totalFeedbacks(1000000L)
+                .averageScore(9.99)
+                .feedbacksByDay(new HashMap<>())
+                .feedbacksByUrgency(new HashMap<>())
+                .feedbacks(new ArrayList<>())
+                .build();
+
+        when(databaseQueryService.fetchMetrics()).thenReturn(highMetrics);
+        when(reportGeneratorService.generateReportAsBytes(any(), any())).thenReturn("CSV".getBytes());
+        when(reportGeneratorService.generateS3Key(any())).thenReturn("key");
+        when(reportGeneratorService.getContentType()).thenReturn("text/csv; charset=UTF-8");
+        when(s3UploadService.uploadReport(any(byte[].class), anyString(), anyString()))
+                .thenReturn("https://bucket.s3.amazonaws.com/key");
+
+        Map<String, Object> event = new HashMap<>();
+
+        // Act
+        Function<Map<String, Object>, Map<String, Object>> function = reportingHandler.generateReport();
+        Map<String, Object> result = function.apply(event);
+
+        // Assert
+        assertThat(result.get("statusCode")).isEqualTo(200);
+        assertThat(result.get("totalFeedbacks")).isEqualTo(1000000L);
+        assertThat(result.get("averageScore")).isEqualTo(9.99);
+    }
+
+    @Test
+    @DisplayName("Deve verificar que o método generateS3Key é chamado")
+    void shouldVerifyGenerateS3KeyIsCalled() {
+        // Arrange
+        when(databaseQueryService.fetchMetrics()).thenReturn(mockMetrics);
+        when(reportGeneratorService.generateReportAsBytes(any(), any())).thenReturn("CSV".getBytes());
+        when(reportGeneratorService.generateS3Key(any())).thenReturn("reports/2026/02/report.csv");
+        when(reportGeneratorService.getContentType()).thenReturn("text/csv; charset=UTF-8");
+        when(s3UploadService.uploadReport(any(byte[].class), anyString(), anyString()))
+                .thenReturn("https://bucket.s3.amazonaws.com/key");
+
+        Map<String, Object> event = new HashMap<>();
+
+        // Act
+        Function<Map<String, Object>, Map<String, Object>> function = reportingHandler.generateReport();
+        function.apply(event);
+
+        // Assert
+        verify(reportGeneratorService, times(1)).generateS3Key(any(LocalDateTime.class));
+    }
+
+    @Test
+    @DisplayName("Deve verificar que o content type é passado corretamente ao S3")
+    void shouldVerifyContentTypeIsPassedToS3() {
+        // Arrange
+        when(databaseQueryService.fetchMetrics()).thenReturn(mockMetrics);
+        when(reportGeneratorService.generateReportAsBytes(any(), any())).thenReturn("CSV".getBytes());
+        when(reportGeneratorService.generateS3Key(any())).thenReturn("key");
+        when(reportGeneratorService.getContentType()).thenReturn("text/csv; charset=UTF-8");
+        when(s3UploadService.uploadReport(any(byte[].class), anyString(), anyString()))
+                .thenReturn("https://bucket.s3.amazonaws.com/key");
+
+        Map<String, Object> event = new HashMap<>();
+
+        // Act
+        Function<Map<String, Object>, Map<String, Object>> function = reportingHandler.generateReport();
+        function.apply(event);
+
+        // Assert
+        verify(s3UploadService).uploadReport(any(byte[].class), anyString(), eq("text/csv; charset=UTF-8"));
+    }
 }

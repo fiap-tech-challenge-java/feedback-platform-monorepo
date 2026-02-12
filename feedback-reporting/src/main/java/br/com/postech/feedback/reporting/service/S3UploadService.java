@@ -1,6 +1,7 @@
 package br.com.postech.feedback.reporting.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -22,7 +23,7 @@ import java.time.Duration;
 public class S3UploadService {
 
     private final S3Client s3Client;
-    private final S3Presigner s3Presigner;
+    private S3Presigner s3Presigner;
 
     @Value("${S3_BUCKET_NAME:}")
     private String bucketName;
@@ -33,11 +34,20 @@ public class S3UploadService {
     @Value("${aws.s3.presigned-url-expiration-days:7}")
     private int presignedUrlExpirationDays;
 
+    @Autowired
     public S3UploadService(S3Client s3Client) {
         this.s3Client = s3Client;
         this.s3Presigner = null;
     }
 
+    public S3UploadService(S3Client s3Client, S3Presigner s3Presigner) {
+        this.s3Client = s3Client;
+        this.s3Presigner = s3Presigner;
+    }
+
+    /**
+     * Upload de conteúdo em bytes (para Excel/binários)
+     */
     public String uploadReport(byte[] content, String s3Key, String contentType) {
         validateBucketConfiguration();
 
@@ -95,25 +105,34 @@ public class S3UploadService {
     }
 
     private String generatePresignedUrl(String s3Key) {
+        // Se o presigner foi injetado (para testes), usar ele diretamente
+        if (s3Presigner != null) {
+            return generatePresignedUrlWithPresigner(s3Presigner, s3Key);
+        }
+
+        // Caso contrário, criar um novo presigner
         try (S3Presigner presigner = S3Presigner.builder()
                 .region(Region.of(region))
                 .build()) {
-
-            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(s3Key)
-                    .build();
-
-            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                    .signatureDuration(Duration.ofDays(presignedUrlExpirationDays))
-                    .getObjectRequest(getObjectRequest)
-                    .build();
-
-            PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
-            String presignedUrl = presignedRequest.url().toString();
-
-            log.info("Generated presigned URL for key: {}", s3Key);
-            return presignedUrl;
+            return generatePresignedUrlWithPresigner(presigner, s3Key);
         }
+    }
+
+    private String generatePresignedUrlWithPresigner(S3Presigner presigner, String s3Key) {
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(s3Key)
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofDays(presignedUrlExpirationDays))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
+        String presignedUrl = presignedRequest.url().toString();
+
+        log.info("Generated presigned URL for key: {}", s3Key);
+        return presignedUrl;
     }
 }
