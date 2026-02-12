@@ -118,5 +118,183 @@ class DatabaseQueryServiceTest {
                     .thenThrow(new RuntimeException("Database connection failed"));
             assertThrows(RuntimeException.class, () -> service.fetchMetrics());
         }
+
+        @Test
+        @DisplayName("Should throw RuntimeException when calculateAverageScore fails")
+        void shouldThrowRuntimeExceptionWhenCalculateAverageScoreFails() {
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(5L);
+            when(feedbackRepository.calculateAverageScore())
+                    .thenThrow(new RuntimeException("Query execution failed"));
+
+            assertThrows(RuntimeException.class, () -> service.fetchMetrics());
+        }
+
+        @Test
+        @DisplayName("Should throw RuntimeException when findAllFeedbacksForReport fails")
+        void shouldThrowRuntimeExceptionWhenFindAllFeedbacksForReportFails() {
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(5L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(4.0);
+            when(feedbackRepository.findAllFeedbacksForReport())
+                    .thenThrow(new RuntimeException("Query timeout"));
+
+            assertThrows(RuntimeException.class, () -> service.fetchMetrics());
+        }
+    }
+
+    @Nested
+    @DisplayName("Urgency Mapping Tests")
+    class UrgencyMappingTests {
+        @Test
+        @DisplayName("Should map rating 1 to HIGH urgency")
+        void shouldMapRating1ToHighUrgency() {
+            List<Feedback> feedbacks = new ArrayList<>();
+            feedbacks.add(createFeedback(1L, "Very bad", 1, StatusFeedback.CRITICAL, LocalDateTime.now()));
+
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(1.0);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(feedbacks);
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertEquals(1L, result.getFeedbacksByUrgency().get("HIGH"));
+        }
+
+        @Test
+        @DisplayName("Should map rating 2 to HIGH urgency")
+        void shouldMapRating2ToHighUrgency() {
+            List<Feedback> feedbacks = new ArrayList<>();
+            feedbacks.add(createFeedback(1L, "Bad", 2, StatusFeedback.CRITICAL, LocalDateTime.now()));
+
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(2.0);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(feedbacks);
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertEquals(1L, result.getFeedbacksByUrgency().get("HIGH"));
+        }
+
+        @Test
+        @DisplayName("Should map rating 3 to MEDIUM urgency")
+        void shouldMapRating3ToMediumUrgency() {
+            List<Feedback> feedbacks = new ArrayList<>();
+            feedbacks.add(createFeedback(1L, "Below average", 3, StatusFeedback.NORMAL, LocalDateTime.now()));
+
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(3.0);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(feedbacks);
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertEquals(1L, result.getFeedbacksByUrgency().get("MEDIUM"));
+        }
+
+        @Test
+        @DisplayName("Should map rating 4 to MEDIUM urgency")
+        void shouldMapRating4ToMediumUrgency() {
+            List<Feedback> feedbacks = new ArrayList<>();
+            feedbacks.add(createFeedback(1L, "Average", 4, StatusFeedback.NORMAL, LocalDateTime.now()));
+
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(4.0);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(feedbacks);
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertEquals(1L, result.getFeedbacksByUrgency().get("MEDIUM"));
+        }
+
+        @Test
+        @DisplayName("Should map rating 5 to LOW urgency")
+        void shouldMapRating5ToLowUrgency() {
+            List<Feedback> feedbacks = new ArrayList<>();
+            feedbacks.add(createFeedback(1L, "Good", 5, StatusFeedback.NORMAL, LocalDateTime.now()));
+
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(5.0);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(feedbacks);
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertEquals(1L, result.getFeedbacksByUrgency().get("LOW"));
+        }
+
+        @Test
+        @DisplayName("Should map CRITICAL status to HIGH urgency regardless of rating")
+        void shouldMapCriticalStatusToHighUrgencyRegardlessOfRating() {
+            List<Feedback> feedbacks = new ArrayList<>();
+            feedbacks.add(createFeedback(1L, "Critical", 5, StatusFeedback.CRITICAL, LocalDateTime.now()));
+
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(5.0);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(feedbacks);
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertEquals(1L, result.getFeedbacksByUrgency().get("HIGH"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Average Score Rounding Tests")
+    class AverageScoreRoundingTests {
+        @Test
+        @DisplayName("Should round average score to two decimal places")
+        void shouldRoundAverageScoreToTwoDecimalPlaces() {
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(4.567);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(new ArrayList<>());
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertEquals(4.57, result.getAverageScore());
+        }
+
+        @Test
+        @DisplayName("Should handle whole numbers correctly")
+        void shouldHandleWholeNumbersCorrectly() {
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(5.0);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(new ArrayList<>());
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertEquals(5.0, result.getAverageScore());
+        }
+    }
+
+    @Nested
+    @DisplayName("Feedback Details ISO Format Tests")
+    class FeedbackDetailsIsoFormatTests {
+        @Test
+        @DisplayName("Should format createdAt in ISO format")
+        void shouldFormatCreatedAtInIsoFormat() {
+            LocalDateTime specificDate = LocalDateTime.of(2026, 2, 9, 14, 30, 45);
+            List<Feedback> feedbacks = new ArrayList<>();
+            feedbacks.add(createFeedback(1L, "Test", 5, StatusFeedback.NORMAL, specificDate));
+
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(5.0);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(feedbacks);
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertEquals("2026-02-09T14:30:45Z", result.getFeedbacks().get(0).getCreatedAt());
+        }
+
+        @Test
+        @DisplayName("Should handle null createdAt gracefully")
+        void shouldHandleNullCreatedAtGracefully() {
+            List<Feedback> feedbacks = new ArrayList<>();
+            feedbacks.add(createFeedback(1L, "Test", 5, StatusFeedback.NORMAL, null));
+
+            when(feedbackRepository.countTotalFeedbacks()).thenReturn(1L);
+            when(feedbackRepository.calculateAverageScore()).thenReturn(5.0);
+            when(feedbackRepository.findAllFeedbacksForReport()).thenReturn(feedbacks);
+
+            ReportMetrics result = service.fetchMetrics();
+
+            assertNull(result.getFeedbacks().get(0).getCreatedAt());
+        }
     }
 }

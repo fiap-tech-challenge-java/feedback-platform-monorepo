@@ -5,7 +5,6 @@ import br.com.postech.feedback.core.domain.StatusFeedback;
 import br.com.postech.feedback.ingestion.domain.FeedbackResponse;
 import br.com.postech.feedback.ingestion.domain.dto.CreateFeedback;
 import br.com.postech.feedback.ingestion.domain.dto.FeedbackRequest;
-import br.com.postech.feedback.ingestion.domain.mapper.FeedbackInjectionApiMapper;
 import br.com.postech.feedback.ingestion.domain.service.FeedbackInjectionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -195,6 +194,248 @@ class FeedbackInjectionControllerTest {
             // Assert
             assertEquals(HttpStatus.CREATED, response.getStatusCode());
             assertEquals(10, response.getBody().rating());
+        }
+    }
+
+    @Nested
+    @DisplayName("Description Edge Cases Tests")
+    class DescriptionEdgeCasesTests {
+
+        @Test
+        @DisplayName("Should handle empty description")
+        void shouldHandleEmptyDescription() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("", 5);
+            Feedback feedback = createMockFeedback(9L, "", 5, StatusFeedback.NORMAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals("", response.getBody().description());
+        }
+
+        @Test
+        @DisplayName("Should handle very long description")
+        void shouldHandleVeryLongDescription() {
+            // Arrange
+            String longDescription = "a".repeat(1000);
+            FeedbackRequest request = new FeedbackRequest(longDescription, 6);
+            Feedback feedback = createMockFeedback(10L, longDescription, 6, StatusFeedback.NORMAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(longDescription, response.getBody().description());
+        }
+
+        @Test
+        @DisplayName("Should handle description with special characters")
+        void shouldHandleDescriptionWithSpecialCharacters() {
+            // Arrange
+            String specialDescription = "Feedback com caracteres especiais: @#$%^&*()[]{}|\\<>?/~`";
+            FeedbackRequest request = new FeedbackRequest(specialDescription, 7);
+            Feedback feedback = createMockFeedback(11L, specialDescription, 7, StatusFeedback.NORMAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(specialDescription, response.getBody().description());
+        }
+
+        @Test
+        @DisplayName("Should handle description with unicode characters")
+        void shouldHandleDescriptionWithUnicodeCharacters() {
+            // Arrange
+            String unicodeDescription = "Feedback com émojis 😀😃😄 e acentuação àáâãäå";
+            FeedbackRequest request = new FeedbackRequest(unicodeDescription, 8);
+            Feedback feedback = createMockFeedback(12L, unicodeDescription, 8, StatusFeedback.NORMAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(unicodeDescription, response.getBody().description());
+        }
+
+        @Test
+        @DisplayName("Should handle description with line breaks")
+        void shouldHandleDescriptionWithLineBreaks() {
+            // Arrange
+            String multilineDescription = "Primeira linha\nSegunda linha\nTerceira linha";
+            FeedbackRequest request = new FeedbackRequest(multilineDescription, 5);
+            Feedback feedback = createMockFeedback(13L, multilineDescription, 5, StatusFeedback.NORMAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(multilineDescription, response.getBody().description());
+        }
+    }
+
+    @Nested
+    @DisplayName("Error Handling Tests")
+    class ErrorHandlingTests {
+
+        @Test
+        @DisplayName("Should propagate IllegalStateException from service")
+        void shouldPropagateIllegalStateExceptionFromService() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("Test", 5);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class)))
+                    .thenThrow(new IllegalStateException("SQS not configured"));
+
+            // Act & Assert
+            assertThrows(IllegalStateException.class, () -> controller.feedbackInjection(request));
+        }
+
+        @Test
+        @DisplayName("Should propagate IllegalArgumentException from service")
+        void shouldPropagateIllegalArgumentExceptionFromService() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("Test", 5);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class)))
+                    .thenThrow(new IllegalArgumentException("Invalid rating"));
+
+            // Act & Assert
+            assertThrows(IllegalArgumentException.class, () -> controller.feedbackInjection(request));
+        }
+    }
+
+    @Nested
+    @DisplayName("All Rating Values Tests")
+    class AllRatingValuesTests {
+
+        @Test
+        @DisplayName("Should set CRITICAL status for rating 1")
+        void shouldSetCriticalStatusForRating1() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("Very bad", 1);
+            Feedback feedback = createMockFeedback(14L, "Very bad", 1, StatusFeedback.CRITICAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(StatusFeedback.CRITICAL, response.getBody().status());
+        }
+
+        @Test
+        @DisplayName("Should set CRITICAL status for rating 2")
+        void shouldSetCriticalStatusForRating2() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("Bad", 2);
+            Feedback feedback = createMockFeedback(15L, "Bad", 2, StatusFeedback.CRITICAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(StatusFeedback.CRITICAL, response.getBody().status());
+        }
+
+        @Test
+        @DisplayName("Should set CRITICAL status for rating 3")
+        void shouldSetCriticalStatusForRating3() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("Poor", 3);
+            Feedback feedback = createMockFeedback(16L, "Poor", 3, StatusFeedback.CRITICAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(StatusFeedback.CRITICAL, response.getBody().status());
+        }
+
+        @Test
+        @DisplayName("Should set CRITICAL status for rating 4")
+        void shouldSetCriticalStatusForRating4() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("Below average", 4);
+            Feedback feedback = createMockFeedback(17L, "Below average", 4, StatusFeedback.CRITICAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(StatusFeedback.CRITICAL, response.getBody().status());
+        }
+
+        @Test
+        @DisplayName("Should set NORMAL status for rating 5")
+        void shouldSetNormalStatusForRating5() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("Average", 5);
+            Feedback feedback = createMockFeedback(18L, "Average", 5, StatusFeedback.NORMAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(StatusFeedback.NORMAL, response.getBody().status());
+        }
+
+        @Test
+        @DisplayName("Should set NORMAL status for rating 6")
+        void shouldSetNormalStatusForRating6() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("Above average", 6);
+            Feedback feedback = createMockFeedback(19L, "Above average", 6, StatusFeedback.NORMAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(StatusFeedback.NORMAL, response.getBody().status());
+        }
+
+        @Test
+        @DisplayName("Should set NORMAL status for rating 9")
+        void shouldSetNormalStatusForRating9() {
+            // Arrange
+            FeedbackRequest request = new FeedbackRequest("Excellent", 9);
+            Feedback feedback = createMockFeedback(20L, "Excellent", 9, StatusFeedback.NORMAL);
+
+            when(feedbackInjectionService.processFeedback(any(CreateFeedback.class))).thenReturn(feedback);
+
+            // Act
+            ResponseEntity<FeedbackResponse> response = controller.feedbackInjection(request);
+
+            // Assert
+            assertEquals(StatusFeedback.NORMAL, response.getBody().status());
         }
     }
 
