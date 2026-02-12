@@ -4,8 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ses.SesClient;
 
 import java.net.URI;
@@ -13,10 +15,10 @@ import java.net.URI;
 @Configuration
 public class AwsConfig {
 
-    @Value("${spring.cloud.aws.region.static:}")
+    @Value("${cloud.aws.region.static:}")
     private String region;
 
-    @Value("${spring.cloud.aws.endpoint:}")
+    @Value("${cloud.aws.ses.endpoint:}")
     private String endpointUrl;
 
     @Value("${aws.access-key:}")
@@ -25,15 +27,28 @@ public class AwsConfig {
     @Value("${aws.secret-key:}")
     private String secretKey;
 
+    private Region resolveRegion() {
+        if (region != null && !region.isBlank()) {
+            return Region.of(region);
+        }
+        return new DefaultAwsRegionProviderChain().getRegion();
+    }
+
+    private boolean isLocalEnvironment() {
+        return endpointUrl != null && !endpointUrl.isBlank();
+    }
+
     @Bean
     public SesClient sesClient() {
         var builder = SesClient.builder()
-                .region(Region.of(region));
+                .region(resolveRegion());
 
-        if (endpointUrl != null && !endpointUrl.isBlank()) {
+        if (isLocalEnvironment()) {
             builder.endpointOverride(URI.create(endpointUrl))
                     .credentialsProvider(StaticCredentialsProvider.create(
                             AwsBasicCredentials.create(accessKey, secretKey)));
+        } else {
+            builder.credentialsProvider(DefaultCredentialsProvider.create());
         }
 
         return builder.build();

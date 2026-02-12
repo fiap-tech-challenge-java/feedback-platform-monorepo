@@ -1,5 +1,4 @@
 services:
-  # --- INFRAESTRUTURA LOCAL ---
   postgres:
     image: postgres:15-alpine
     container_name: feedback-db
@@ -29,7 +28,6 @@ services:
     networks:
       - feedback-network
 
-  # --- MICROSSERVIÇOS (BUILD LOCAL) ---
   feedback-ingestion:
     build:
       context: ./feedback-ingestion
@@ -109,7 +107,6 @@ services:
     networks:
       - feedback-network
 
-  # --- PROXY REVERSO ---
   nginx:
     image: nginx:alpine
     container_name: nginx-proxy

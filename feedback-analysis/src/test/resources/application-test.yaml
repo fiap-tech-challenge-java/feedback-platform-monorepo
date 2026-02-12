@@ -10,14 +10,12 @@ spring:
         secret-key: ${AWS_SECRET_KEY:}
       endpoint: ${AWS_ENDPOINT:}
 
-# Desabilita o listener SQS durante os testes unitários
 cloud:
   aws:
     sqs:
       listener:
         auto-startup: false
 
-# Configurações de teste - SNS_TOPIC_ARN é obrigatório
 app:
   sqs:
     queue-name: ${SQS_QUEUE_NAME:}
