@@ -45,9 +45,6 @@ public class S3UploadService {
         this.s3Presigner = s3Presigner;
     }
 
-    /**
-     * Upload de conteúdo em bytes (para Excel/binários)
-     */
     public String uploadReport(byte[] content, String s3Key, String contentType) {
         validateBucketConfiguration();
 
@@ -105,12 +102,10 @@ public class S3UploadService {
     }
 
     private String generatePresignedUrl(String s3Key) {
-        // Se o presigner foi injetado (para testes), usar ele diretamente
         if (s3Presigner != null) {
             return generatePresignedUrlWithPresigner(s3Presigner, s3Key);
         }
 
-        // Caso contrário, criar um novo presigner
         try (S3Presigner presigner = S3Presigner.builder()
                 .region(Region.of(region))
                 .build()) {
