@@ -1,4 +1,3 @@
-
 package br.com.postech.feedback.notification.metrics;
 
 import io.micrometer.core.instrument.Counter;
@@ -32,7 +31,6 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should initialize all counters")
         void shouldInitializeAllCounters() {
-            // Assert - counters should exist in registry
             assertNotNull(meterRegistry.find("notification.emails.sent").counter());
             assertNotNull(meterRegistry.find("notification.emails.failed").counter());
             assertNotNull(meterRegistry.find("notification.messages.received").counter());
@@ -43,7 +41,6 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should initialize processing timer")
         void shouldInitializeProcessingTimer() {
-            // Assert
             assertNotNull(meterRegistry.find("notification.processing.time").timer());
         }
     }
@@ -55,29 +52,23 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should increment emails sent counter")
         void shouldIncrementEmailsSentCounter() {
-            // Arrange
             Counter counter = meterRegistry.find("notification.emails.sent").counter();
             double initialCount = counter.count();
 
-            // Act
             metrics.incrementEmailsSent();
 
-            // Assert
             assertEquals(initialCount + 1, counter.count());
         }
 
         @Test
         @DisplayName("Should increment multiple times")
         void shouldIncrementMultipleTimes() {
-            // Arrange
             Counter counter = meterRegistry.find("notification.emails.sent").counter();
 
-            // Act
             metrics.incrementEmailsSent();
             metrics.incrementEmailsSent();
             metrics.incrementEmailsSent();
 
-            // Assert
             assertEquals(3, counter.count());
         }
     }
@@ -89,14 +80,11 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should increment emails failed counter")
         void shouldIncrementEmailsFailedCounter() {
-            // Arrange
             Counter counter = meterRegistry.find("notification.emails.failed").counter();
             double initialCount = counter.count();
 
-            // Act
             metrics.incrementEmailsFailed();
 
-            // Assert
             assertEquals(initialCount + 1, counter.count());
         }
     }
@@ -108,14 +96,11 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should increment messages received counter")
         void shouldIncrementMessagesReceivedCounter() {
-            // Arrange
             Counter counter = meterRegistry.find("notification.messages.received").counter();
             double initialCount = counter.count();
 
-            // Act
             metrics.incrementMessagesReceived();
 
-            // Assert
             assertEquals(initialCount + 1, counter.count());
         }
     }
@@ -127,14 +112,11 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should increment messages processed counter")
         void shouldIncrementMessagesProcessedCounter() {
-            // Arrange
             Counter counter = meterRegistry.find("notification.messages.processed").counter();
             double initialCount = counter.count();
 
-            // Act
             metrics.incrementMessagesProcessed();
 
-            // Assert
             assertEquals(initialCount + 1, counter.count());
         }
     }
@@ -146,14 +128,11 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should increment messages rejected counter")
         void shouldIncrementMessagesRejectedCounter() {
-            // Arrange
             Counter counter = meterRegistry.find("notification.messages.rejected").counter();
             double initialCount = counter.count();
 
-            // Act
             metrics.incrementMessagesRejected();
 
-            // Assert
             assertEquals(initialCount + 1, counter.count());
         }
     }
@@ -165,10 +144,8 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should return processing timer")
         void shouldReturnProcessingTimer() {
-            // Act
             Timer timer = metrics.getProcessingTimer();
 
-            // Assert
             assertNotNull(timer);
         }
     }
@@ -180,13 +157,10 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should record processing time")
         void shouldRecordProcessingTime() {
-            // Arrange
             Timer timer = meterRegistry.find("notification.processing.time").timer();
             long initialCount = timer.count();
 
-            // Act
             metrics.recordProcessingTime(() -> {
-                // Simulate some work
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
@@ -194,7 +168,6 @@ class NotificationMetricsTest {
                 }
             });
 
-            // Assert
             assertEquals(initialCount + 1, timer.count());
             assertTrue(timer.totalTime(java.util.concurrent.TimeUnit.MILLISECONDS) > 0);
         }
@@ -207,7 +180,6 @@ class NotificationMetricsTest {
         @Test
         @DisplayName("Should have service tag on counters")
         void shouldHaveServiceTagOnCounters() {
-            // Assert
             Counter emailsSent = meterRegistry.find("notification.emails.sent")
                     .tag("service", "notification")
                     .counter();

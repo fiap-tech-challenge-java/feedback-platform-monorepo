@@ -117,14 +117,13 @@ class AwsConfigTest {
             ReflectionTestUtils.setField(awsConfig, "endpointUrl", "http://localhost:4566");
             setLocalStackCredentials(awsConfig);
 
-            // Act - Note: this will try to create queue which may fail without LocalStack running
-            // We're just testing that client creation doesn't throw NPE
+            // Act
             try {
                 SqsClient sqsClient = awsConfig.sqsClient();
+                // Assert
                 assertNotNull(sqsClient);
                 sqsClient.close();
             } catch (Exception e) {
-                // Expected if LocalStack is not running - the important thing is no NPE for credentials
                 assertTrue(e.getMessage() == null || !e.getMessage().contains("Access key ID cannot be blank"));
             }
         }
